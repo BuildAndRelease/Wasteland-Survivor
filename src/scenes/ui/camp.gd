@@ -1,0 +1,210 @@
+extends Control
+## Camp screen: character selection, permanent upgrades, and game start.
+## Hub between runs. Flow: Main Menu -> Camp -> Game -> Settlement -> Camp.
+
+@onready var coins_label: Label = $TopBar/CoinsLabel
+@onready var char_container: HBoxContainer = $Content/CharacterSection/CharContainer
+@onready var char_info_label: Label = $Content/CharacterSection/CharInfoLabel
+@onready var upgrade_container: VBoxContainer = $Content/UpgradeSection/UpgradeList
+@onready var start_button: Button = $Content/StartButton
+@onready var menu_button: Button = $TopBar/MenuButton
+
+var _char_buttons: Dictionary = {}
+var _upgrade_buttons: Dictionary = {}
+var _selected_character: String = "survivor"
+
+
+func _ready() -> void:
+	GameManager.set_state(GameManager.State.CAMP)
+	_selected_character = SaveManager.selected_character
+	_build_character_buttons()
+	_build_upgrade_buttons()
+	_update_coins_display()
+	_update_character_selection()
+	_update_upgrade_display()
+	start_button.pressed.connect(_on_start_pressed)
+	menu_button.pressed.connect(_on_menu_pressed)
+	SaveManager.data_changed.connect(_on_data_changed)
+
+
+func _build_character_buttons() -> void:
+	for child in char_container.get_children():
+		child.queue_free()
+	_char_buttons.clear()
+
+	for char_id: String in CampData.get_all_character_ids():
+		var data: Dictionary = CampData.get_character(char_id)
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(140, 120)
+		btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+		var unlocked: bool = SaveManager.is_character_unlocked(char_id)
+		if unlocked:
+			btn.text = "%s\n%s" % [data.get("name", ""), data.get("name_cn", "")]
+		else:
+			btn.text = "%s\n%s\n[LOCKED: %d coins]" % [data.get("name", ""), data.get("name_cn", ""), data.get("cost", 0)]
+
+		# Apply character color as modulate hint
+		var style := StyleBoxFlat.new()
+		var base_color: Color = data.get("color", Color.WHITE)
+		if not unlocked:
+			base_color = Color(0.3, 0.3, 0.3, 1)
+		style.bg_color = base_color.darkened(0.6)
+		style.border_width_bottom = 3
+		style.border_width_top = 3
+		style.border_width_left = 3
+		style.border_width_right = 3
+		style.border_color = base_color
+		style.corner_radius_top_left = 4
+		style.corner_radius_top_right = 4
+		style.corner_radius_bottom_left = 4
+		style.corner_radius_bottom_right = 4
+		btn.add_theme_stylebox_override("normal", style)
+
+		var hover_style := style.duplicate()
+		hover_style.bg_color = base_color.darkened(0.4)
+		btn.add_theme_stylebox_override("hover", hover_style)
+
+		var pressed_style := style.duplicate()
+		pressed_style.bg_color = base_color.darkened(0.3)
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+
+		btn.pressed.connect(_on_character_pressed.bind(char_id))
+		char_container.add_child(btn)
+		_char_buttons[char_id] = btn
+
+
+func _build_upgrade_buttons() -> void:
+	for child in upgrade_container.get_children():
+		child.queue_free()
+	_upgrade_buttons.clear()
+
+	for upgrade_id: String in CampData.get_all_upgrade_ids():
+		var data: Dictionary = CampData.get_upgrade(upgrade_id)
+		var hbox := HBoxContainer.new()
+
+		var info_label := Label.new()
+		info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_label.text = _format_upgrade_text(upgrade_id, data)
+		hbox.add_child(info_label)
+
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(120, 40)
+		btn.pressed.connect(_on_upgrade_pressed.bind(upgrade_id))
+		hbox.add_child(btn)
+
+		upgrade_container.add_child(hbox)
+		_upgrade_buttons[upgrade_id] = {"label": info_label, "button": btn, "container": hbox}
+
+	_update_upgrade_display()
+
+
+func _format_upgrade_text(upgrade_id: String, data: Dictionary) -> String:
+	var current_level: int = SaveManager.get_upgrade_level(upgrade_id)
+	var max_level: int = data.get("max_level", 0)
+	var name_str: String = "%s (%s)" % [data.get("name", ""), data.get("name_cn", "")]
+
+	if current_level >= max_level:
+		return "%s  Lv.%d/%d  MAX" % [name_str, current_level, max_level]
+
+	var effect_desc: String = ""
+	var levels: Array = data.get("levels", [])
+	if current_level > 0 and current_level <= levels.size():
+		effect_desc = levels[current_level - 1].get("desc", "")
+	return "%s  Lv.%d/%d  %s" % [name_str, current_level, max_level, effect_desc]
+
+
+func _update_coins_display() -> void:
+	coins_label.text = "Scrap Coins: %d" % SaveManager.scrap_coins
+
+
+func _update_character_selection() -> void:
+	for char_id: String in _char_buttons:
+		var btn: Button = _char_buttons[char_id]
+		var data: Dictionary = CampData.get_character(char_id)
+		var unlocked: bool = SaveManager.is_character_unlocked(char_id)
+		var base_color: Color = data.get("color", Color.WHITE)
+
+		# Highlight selected character
+		var style: StyleBoxFlat = btn.get_theme_stylebox("normal").duplicate()
+		if char_id == _selected_character and unlocked:
+			style.border_color = Color.WHITE
+			style.border_width_bottom = 4
+			style.border_width_top = 4
+			style.border_width_left = 4
+			style.border_width_right = 4
+		elif unlocked:
+			style.border_color = base_color
+			style.border_width_bottom = 3
+			style.border_width_top = 3
+			style.border_width_left = 3
+			style.border_width_right = 3
+		btn.add_theme_stylebox_override("normal", style)
+
+	# Update info label
+	var sel_data: Dictionary = CampData.get_character(_selected_character)
+	char_info_label.text = "%s — %s" % [sel_data.get("name", ""), sel_data.get("description", "")]
+
+
+func _update_upgrade_display() -> void:
+	for upgrade_id: String in _upgrade_buttons:
+		var data: Dictionary = CampData.get_upgrade(upgrade_id)
+		var widgets: Dictionary = _upgrade_buttons[upgrade_id]
+		var label: Label = widgets["label"]
+		var btn: Button = widgets["button"]
+
+		var current_level: int = SaveManager.get_upgrade_level(upgrade_id)
+		var max_level: int = data.get("max_level", 0)
+
+		label.text = _format_upgrade_text(upgrade_id, data)
+
+		if current_level >= max_level:
+			btn.text = "MAX"
+			btn.disabled = true
+		else:
+			var cost: int = CampData.get_next_upgrade_cost(upgrade_id, current_level)
+			btn.text = "Upgrade (%d)" % cost
+			btn.disabled = SaveManager.scrap_coins < cost
+
+
+func _on_character_pressed(char_id: String) -> void:
+	var unlocked: bool = SaveManager.is_character_unlocked(char_id)
+	if unlocked:
+		_selected_character = char_id
+		SaveManager.select_character(char_id)
+		_update_character_selection()
+	else:
+		# Try to unlock
+		var data: Dictionary = CampData.get_character(char_id)
+		var cost: int = data.get("cost", 0)
+		if SaveManager.spend_scrap_coins(cost):
+			SaveManager.unlock_character(char_id)
+			_selected_character = char_id
+			SaveManager.select_character(char_id)
+			_build_character_buttons()
+			_update_character_selection()
+			_update_coins_display()
+			_update_upgrade_display()
+
+
+func _on_upgrade_pressed(upgrade_id: String) -> void:
+	var current_level: int = SaveManager.get_upgrade_level(upgrade_id)
+	var cost: int = CampData.get_next_upgrade_cost(upgrade_id, current_level)
+	if cost < 0:
+		return
+	if SaveManager.spend_scrap_coins(cost):
+		SaveManager.set_upgrade_level(upgrade_id, current_level + 1)
+		_update_coins_display()
+		_update_upgrade_display()
+
+
+func _on_start_pressed() -> void:
+	GameManager.start_game()
+
+
+func _on_menu_pressed() -> void:
+	GameManager.go_to_menu()
+
+
+func _on_data_changed() -> void:
+	_update_coins_display()

@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://src/gameplay/enemy_spawner.gd" id="3"]
 [ext_resource type="PackedScene" path="res://src/scenes/ui/hud.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://src/scenes/ui/level_up_panel.tscn" id="5"]
-[ext_resource type="PackedScene" path="res://src/scenes/ui/game_over.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/settlement.tscn" id="6"]
 [ext_resource type="Script" path="res://src/gameplay/map_decoration.gd" id="7"]
 
 [node name="GameWorld" type="Node2D"]
@@ -27,4 +27,4 @@ script = ExtResource("3")
 
 [node name="LevelUpPanel" parent="." instance=ExtResource("5")]
 
-[node name="GameOverPanel" parent="." instance=ExtResource("6")]
+[node name="SettlementPanel" parent="." instance=ExtResource("6")]

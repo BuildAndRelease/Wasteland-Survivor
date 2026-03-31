@@ -1,5 +1,5 @@
 extends Control
-## Main menu: title screen with start button.
+## Main menu: title screen with start button. Navigates to Camp screen.
 
 
 func _ready() -> void:
@@ -7,4 +7,4 @@ func _ready() -> void:
 
 
 func _on_start_pressed() -> void:
-	GameManager.start_game()
+	GameManager.go_to_camp()

@@ -1,12 +1,13 @@
 extends Node
 ## Global game state manager (autoload singleton).
+## Flow: Main Menu -> Camp -> Game -> Settlement -> Camp
 
 signal game_state_changed(new_state: String)
 signal player_leveled_up(new_level: int)
 signal wave_changed(wave_number: int)
 signal game_over_triggered(survived_time: float)
 
-enum State { MAIN_MENU, GAMEPLAY, PAUSED, LEVEL_UP, GAME_OVER }
+enum State { MAIN_MENU, CAMP, GAMEPLAY, PAUSED, LEVEL_UP, GAME_OVER, SETTLEMENT }
 
 var current_state: State = State.MAIN_MENU
 var player_level: int = 1
@@ -15,6 +16,9 @@ var current_wave: int = 1
 var elapsed_time: float = 0.0
 var enemies_killed: int = 0
 var is_game_active: bool = false
+
+## Whether boss was defeated this run (used by settlement screen).
+var boss_defeated: bool = false
 
 ## XP required per level: base 20, grows by 15 per level.
 func xp_for_level(level: int) -> int:
@@ -47,7 +51,10 @@ func set_state(new_state: State) -> void:
 			get_tree().paused = true
 			is_game_active = false
 			game_over_triggered.emit(elapsed_time)
-		State.MAIN_MENU:
+		State.SETTLEMENT:
+			get_tree().paused = true
+			is_game_active = false
+		State.MAIN_MENU, State.CAMP:
 			get_tree().paused = false
 			is_game_active = false
 	game_state_changed.emit(State.keys()[new_state])
@@ -55,7 +62,13 @@ func set_state(new_state: State) -> void:
 func start_game() -> void:
 	reset_stats()
 	get_tree().change_scene_to_file("res://src/scenes/game/game_world.tscn")
-	# State set after scene loads via game.gd _ready
+	# State set after scene loads via game_world.gd _ready
+
+func go_to_camp() -> void:
+	reset_stats()
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://src/scenes/ui/camp.tscn")
+	set_state(State.CAMP)
 
 func go_to_menu() -> void:
 	reset_stats()
@@ -70,6 +83,7 @@ func reset_stats() -> void:
 	elapsed_time = 0.0
 	enemies_killed = 0
 	is_game_active = false
+	boss_defeated = false
 
 func trigger_game_over() -> void:
 	set_state(State.GAME_OVER)
