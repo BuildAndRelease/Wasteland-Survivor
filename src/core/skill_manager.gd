@@ -22,6 +22,9 @@ var player_ref: CharacterBody2D = null
 
 ## Preloaded skill scenes — base skills
 var _fire_bomb_scene: PackedScene = null
+
+## Accumulated bonus scrap coins from level-up picks.
+var bonus_scrap_coins: int = 0
 var _poison_gas_scene: PackedScene = null
 var _emp_pulse_scene: PackedScene = null
 var _spike_trap_scene: PackedScene = null
@@ -63,6 +66,11 @@ func _process(delta: float) -> void:
 
 ## Add or upgrade a skill. Returns the new level.
 func add_skill(skill_id: String) -> int:
+	# Handle generic bonus picks (all skills maxed)
+	if skill_id.begins_with("_bonus_"):
+		_apply_bonus(skill_id)
+		return 0
+
 	# Handle combo skills — they are one-shot activations, not leveled
 	if SkillData.COMBO_SKILLS.has(skill_id):
 		if not active_combos.has(skill_id):
@@ -168,6 +176,37 @@ func generate_level_up_choices(count: int) -> Array:
 		else:
 			break
 		pick_upgrade = not pick_upgrade
+
+	# If not enough choices (all skills maxed), fill with generic bonuses
+	if choices.size() < count:
+		var bonus_pool: Array = [
+			{
+				"skill_id": "_bonus_heal",
+				"is_combo": false,
+				"is_bonus": true,
+				"level": 0,
+				"data": {"name": "Emergency Repair", "name_cn": "紧急维修", "description": "Restore 30% of max HP immediately."},
+			},
+			{
+				"skill_id": "_bonus_coins",
+				"is_combo": false,
+				"is_bonus": true,
+				"level": 0,
+				"data": {"name": "Scrap Salvage", "name_cn": "废铁回收", "description": "Gain 50 bonus Scrap Coins at end of run."},
+			},
+			{
+				"skill_id": "_bonus_max_hp",
+				"is_combo": false,
+				"is_bonus": true,
+				"level": 0,
+				"data": {"name": "Reinforced Plating", "name_cn": "强化装甲", "description": "Permanently increase max HP by 20 this run."},
+			},
+		]
+		bonus_pool.shuffle()
+		for bonus: Dictionary in bonus_pool:
+			if choices.size() >= count:
+				break
+			choices.append(bonus)
 
 	return choices.slice(0, mini(count, choices.size()))
 
@@ -474,6 +513,27 @@ func _spawn_death_trap(level_data: Dictionary) -> void:
 func _check_combos() -> void:
 	# Combos are offered through the level-up panel, not auto-activated.
 	pass
+
+
+## Apply a generic bonus pick when all skills are maxed.
+func _apply_bonus(bonus_id: String) -> void:
+	if not is_instance_valid(player_ref):
+		return
+	match bonus_id:
+		"_bonus_heal":
+			var heal_amount: int = int(player_ref.max_hp * 0.3)
+			player_ref.heal(float(heal_amount))
+			AudioManager.play_sfx("skill_pickup")
+			VfxManager.spawn_level_up(player_ref.global_position)
+		"_bonus_coins":
+			bonus_scrap_coins += 50
+			AudioManager.play_sfx("coin_earned")
+		"_bonus_max_hp":
+			player_ref.max_hp += 20
+			player_ref.current_hp += 20
+			player_ref.health_changed.emit(player_ref.current_hp, player_ref.max_hp)
+			AudioManager.play_sfx("skill_pickup")
+			VfxManager.spawn_level_up(player_ref.global_position)
 
 
 ## Find nearest enemy to player.

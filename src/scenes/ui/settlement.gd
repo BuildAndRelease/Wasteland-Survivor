@@ -29,7 +29,7 @@ func _set_panel_visible(show: bool) -> void:
 
 
 ## Show settlement results and award scrap coins.
-func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_defeated: bool) -> void:
+func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_defeated: bool, bonus_coins: int = 0) -> void:
 	var mins: int = int(survived_time) / 60
 	var secs: int = int(survived_time) % 60
 	time_label.text = "Survival Time: %d:%02d" % [mins, secs]
@@ -43,7 +43,7 @@ func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_de
 		title_label.text = "GAME OVER"
 
 	# Calculate and award scrap coins
-	_scrap_earned = CampData.calculate_scrap_coins(wave, kills, boss_defeated)
+	_scrap_earned = CampData.calculate_scrap_coins(wave, kills, boss_defeated) + bonus_coins
 	SaveManager.add_scrap_coins(_scrap_earned)
 
 	# Animate coin counter from 0 to earned amount

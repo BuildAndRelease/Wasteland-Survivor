@@ -42,12 +42,15 @@ func _update_buttons() -> void:
 			var choice: Dictionary = current_choices[i]
 			var data: Dictionary = choice.data
 			var level: int = choice.level
-			var level_data: Dictionary = SkillData.get_level_data(choice.skill_id, level) if not choice.is_combo else {}
 
-			var label: String = data.name
-			if choice.is_combo:
-				label += " [COMBO]\n%s" % data.description
+			var label: String = ""
+			if choice.get("is_bonus", false):
+				# Generic bonus pick (all skills maxed)
+				label = "★ %s\n%s" % [data.get("name", ""), data.get("description", "")]
+			elif choice.is_combo:
+				label = "%s [COMBO]\n%s" % [data.name, data.description]
 			else:
+				var level_data: Dictionary = SkillData.get_level_data(choice.skill_id, level)
 				var lv_text: String = "Lv.%d" % level
 				var desc: String = level_data.get("desc", data.description) if not level_data.is_empty() else data.description
 				label = "%s (%s)\n%s" % [data.name, lv_text, desc]

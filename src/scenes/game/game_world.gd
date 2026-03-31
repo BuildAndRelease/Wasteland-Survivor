@@ -164,12 +164,16 @@ func _on_game_over(survived_time: float) -> void:
 	var boss_defeated: bool = bosses.size() == 0 and GameManager.current_wave >= 5
 	GameManager.boss_defeated = boss_defeated
 
+	# Collect bonus coins from level-up picks
+	var bonus_coins: int = skill_manager.bonus_scrap_coins if skill_manager else 0
+
 	settlement_panel.show_panel(
 		survived_time,
 		GameManager.enemies_killed,
 		GameManager.player_level,
 		GameManager.current_wave,
-		boss_defeated
+		boss_defeated,
+		bonus_coins
 	)
 
 
