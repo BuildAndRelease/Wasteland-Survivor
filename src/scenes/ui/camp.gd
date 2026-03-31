@@ -115,7 +115,7 @@ func _format_upgrade_text(upgrade_id: String, data: Dictionary) -> String:
 	var effect_desc: String = ""
 	var levels: Array = data.get("levels", [])
 	if current_level > 0 and current_level <= levels.size():
-		effect_desc = levels[current_level - 1].get("desc", "")
+		effect_desc = levels[current_level - 1].get("desc_cn", levels[current_level - 1].get("desc", "")) if Locale.is_zh() else levels[current_level - 1].get("desc", "")
 	return "%s  Lv.%d/%d  %s" % [name_str, current_level, max_level, effect_desc]
 
 
@@ -151,6 +151,9 @@ func _update_character_selection() -> void:
 	var char_name: String = sel_data.get("name_cn", "") if Locale.is_zh() else sel_data.get("name", "")
 	var char_desc_key: String = "char_%s_desc" % _selected_character
 	var char_desc: String = Locale.t(char_desc_key)
+	# If locale key not found, fallback to data
+	if char_desc == char_desc_key:
+		char_desc = sel_data.get("description_cn", sel_data.get("description", "")) if Locale.is_zh() else sel_data.get("description", "")
 	char_info_label.text = "%s — %s" % [char_name, char_desc]
 
 

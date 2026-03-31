@@ -47,7 +47,7 @@ func _update_buttons() -> void:
 			if choice.get("is_bonus", false):
 				# Generic bonus pick (all skills maxed)
 				var bname: String = data.get("name_cn", data.get("name", "")) if Locale.is_zh() else data.get("name", "")
-				var bdesc: String = data.get("description", "")
+				var bdesc: String = data.get("description_cn", data.get("description", "")) if Locale.is_zh() else data.get("description", "")
 				# Use locale keys for bonus names/descs
 				var bonus_key: String = choice.skill_id.replace("_bonus_", "bonus_")
 				var loc_name: String = Locale.t(bonus_key + "_name")
@@ -59,11 +59,16 @@ func _update_buttons() -> void:
 				label = Locale.t("bonus_label") % [bname, bdesc]
 			elif choice.is_combo:
 				var cname: String = data.get("name_cn", data.name) if Locale.is_zh() else data.name
-				label = Locale.t("combo_label") % [cname, data.description]
+				var cdesc: String = data.get("description_cn", data.description) if Locale.is_zh() else data.description
+				label = Locale.t("combo_label") % [cname, cdesc]
 			else:
 				var level_data: Dictionary = SkillData.get_level_data(choice.skill_id, level)
 				var sname: String = data.get("name_cn", data.name) if Locale.is_zh() else data.name
-				var desc: String = level_data.get("desc", data.description) if not level_data.is_empty() else data.description
+				var desc: String = ""
+				if not level_data.is_empty():
+					desc = level_data.get("desc_cn", level_data.get("desc", data.description)) if Locale.is_zh() else level_data.get("desc", data.description)
+				else:
+					desc = data.get("description_cn", data.description) if Locale.is_zh() else data.description
 				label = Locale.t("skill_label") % [sname, level, desc]
 			buttons[i].text = label
 			buttons[i].visible = true
