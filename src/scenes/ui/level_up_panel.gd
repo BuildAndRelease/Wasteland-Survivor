@@ -11,10 +11,17 @@ var current_choices: Array = []
 
 
 func _ready() -> void:
-	visible = false
+	_set_panel_visible(false)
 	skill_btn_1.pressed.connect(_on_skill_pressed.bind(0))
 	skill_btn_2.pressed.connect(_on_skill_pressed.bind(1))
 	skill_btn_3.pressed.connect(_on_skill_pressed.bind(2))
+
+
+## CanvasLayer has no "visible" property — toggle child nodes instead.
+func _set_panel_visible(show: bool) -> void:
+	for child in get_children():
+		if child is Node:
+			child.visible = show
 
 
 func set_skill_manager(manager: SkillManager) -> void:
@@ -25,7 +32,7 @@ func show_panel() -> void:
 	if skill_manager:
 		current_choices = skill_manager.generate_level_up_choices(3)
 	_update_buttons()
-	visible = true
+	_set_panel_visible(true)
 
 
 func _update_buttons() -> void:
@@ -57,5 +64,5 @@ func _on_skill_pressed(index: int) -> void:
 	var choice: Dictionary = current_choices[index]
 	if skill_manager:
 		skill_manager.add_skill(choice.skill_id)
-	visible = false
+	_set_panel_visible(false)
 	GameManager.set_state(GameManager.State.GAMEPLAY)

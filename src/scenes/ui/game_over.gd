@@ -9,7 +9,14 @@ extends CanvasLayer
 
 
 func _ready() -> void:
-	visible = false
+	_set_panel_visible(false)
+
+
+## CanvasLayer has no "visible" property — toggle child nodes instead.
+func _set_panel_visible(show: bool) -> void:
+	for child in get_children():
+		if child is Node:
+			child.visible = show
 
 
 func show_panel(survived_time: float, kills: int, level: int) -> void:
@@ -26,16 +33,16 @@ func show_panel(survived_time: float, kills: int, level: int) -> void:
 	else:
 		title_label.text = "GAME OVER"
 
-	visible = true
+	_set_panel_visible(true)
 
 
 func _on_restart_pressed() -> void:
 	AudioManager.play_sfx("ui_click")
-	visible = false
+	_set_panel_visible(false)
 	GameManager.start_game()
 
 
 func _on_menu_pressed() -> void:
 	AudioManager.play_sfx("ui_click")
-	visible = false
+	_set_panel_visible(false)
 	GameManager.go_to_menu()

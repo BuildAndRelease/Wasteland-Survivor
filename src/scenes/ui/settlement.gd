@@ -17,8 +17,15 @@ var _coin_counting: bool = false
 
 
 func _ready() -> void:
-	visible = false
+	_set_panel_visible(false)
 	return_button.pressed.connect(_on_return_pressed)
+
+
+## CanvasLayer has no "visible" property — toggle child nodes instead.
+func _set_panel_visible(show: bool) -> void:
+	for child in get_children():
+		if child is Node:
+			child.visible = show
 
 
 ## Show settlement results and award scrap coins.
@@ -42,12 +49,18 @@ func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_de
 	# Animate coin counter from 0 to earned amount
 	_coin_display = 0
 	coins_label.text = "Scrap Coins Earned: +0"
-	visible = true
+	_set_panel_visible(true)
 
-	# Fade in stats
-	modulate.a = 0.0
+	# Fade in stats (modulate children since CanvasLayer has no modulate)
+	var overlay: ColorRect = $Overlay
+	var content: VBoxContainer = $Content
+	overlay.modulate.a = 0.0
+	content.modulate.a = 0.0
 	var fade_tween := create_tween()
-	fade_tween.tween_property(self, "modulate:a", 1.0, 0.3)
+	fade_tween.set_parallel(true)
+	fade_tween.tween_property(overlay, "modulate:a", 1.0, 0.3)
+	fade_tween.tween_property(content, "modulate:a", 1.0, 0.3)
+	fade_tween.set_parallel(false)
 	fade_tween.tween_interval(0.5)
 	fade_tween.tween_callback(_start_coin_count)
 
@@ -84,5 +97,5 @@ func _on_coin_count_done() -> void:
 
 func _on_return_pressed() -> void:
 	AudioManager.play_sfx("ui_click")
-	visible = false
+	_set_panel_visible(false)
 	GameManager.go_to_camp()
