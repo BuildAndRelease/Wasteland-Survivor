@@ -1,5 +1,5 @@
 extends Node2D
-## Main game scene: ties together player, enemy spawner, HUD, and UI panels.
+## Main game scene: ties together player, enemy spawner, HUD, UI panels, and SkillManager.
 
 @onready var player: CharacterBody2D = $Player
 @onready var enemy_spawner: Node2D = $EnemySpawner
@@ -8,11 +8,20 @@ extends Node2D
 @onready var game_over_panel: CanvasLayer = $GameOverPanel
 @onready var camera: Camera2D = $Camera2D
 
+var skill_manager: SkillManager = null
+
 
 func _ready() -> void:
+	# Create and wire SkillManager
+	skill_manager = SkillManager.new()
+	skill_manager.name = "SkillManager"
+	add_child(skill_manager)
+	skill_manager.player_ref = player
+	player.skill_manager = skill_manager
+
 	enemy_spawner.set_player(player)
 	hud.set_player(player)
-	level_up_panel.set_player(player)
+	level_up_panel.set_skill_manager(skill_manager)
 
 	GameManager.player_leveled_up.connect(_on_player_leveled_up)
 	GameManager.game_over_triggered.connect(_on_game_over)

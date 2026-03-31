@@ -1,5 +1,6 @@
 extends CharacterBody2D
 ## Player character: moves with WASD, auto-attacks nearest enemy, dodge rolls.
+## Skill effects are managed by SkillManager; player exposes modifier vars.
 
 signal health_changed(current_hp: int, max_hp: int)
 signal died
@@ -20,13 +21,24 @@ var dodge_timer: float = 0.0
 var dodge_cooldown_timer: float = 0.0
 var is_dodging: bool = false
 var dodge_direction: Vector2 = Vector2.ZERO
-var skills: Array[String] = []
 
-# Skill modifiers
+# Skill modifiers (set by SkillManager)
 var xp_range_mult: float = 1.0
 var damage_reduction: float = 0.0
+var reflect_melee: bool = false
+var double_shot: bool = false
+var regen_percent: float = 0.0
+var low_hp_multiplier: float = 1.0
+var low_hp_threshold: float = 0.0
+var rage_attack_mult: float = 1.0
+var rage_timer: float = 0.0
+var rage_cc_immune: bool = false
+
+# Heal accumulator for sub-integer regen
+var _heal_accumulator: float = 0.0
 
 var projectile_scene: PackedScene
+var skill_manager: SkillManager = null
 
 func _ready() -> void:
 	current_hp = max_hp
@@ -43,6 +55,7 @@ func _physics_process(delta: float) -> void:
 	_handle_dodge(delta)
 	_handle_movement(delta)
 	_handle_attack(delta)
+	_handle_rage(delta)
 	_collect_xp_gems()
 	move_and_slide()
 
@@ -89,7 +102,18 @@ func _handle_attack(delta: float) -> void:
 	var nearest := _find_nearest_enemy()
 	if nearest and global_position.distance_to(nearest.global_position) <= attack_range:
 		_fire_projectile(nearest.global_position)
-		attack_timer = attack_interval
+		if double_shot:
+			# Fire a second projectile with slight offset
+			var offset := (nearest.global_position - global_position).normalized().rotated(0.15) * 10.0
+			_fire_projectile(nearest.global_position + offset)
+		attack_timer = attack_interval * (1.0 / rage_attack_mult)
+
+func _handle_rage(delta: float) -> void:
+	if rage_timer > 0.0:
+		rage_timer -= delta
+		if rage_timer <= 0.0:
+			rage_attack_mult = 1.0
+			rage_cc_immune = false
 
 func _find_nearest_enemy() -> Node2D:
 	var enemies := get_tree().get_nodes_in_group("enemies")
@@ -132,12 +156,19 @@ func take_damage(amount: int) -> void:
 		died.emit()
 		GameManager.trigger_game_over()
 
-func add_skill(skill_name: String) -> void:
-	skills.append(skill_name)
-	match skill_name:
-		"Scavenger Instinct":
-			xp_range_mult += 0.3
-		"Scrap Shield":
-			damage_reduction = min(damage_reduction + 0.1, 0.5)
-		"Rust Bullet":
-			attack_interval = max(attack_interval * 0.7, 0.3)
+## Heal the player by an amount (supports fractional via accumulator).
+func heal(amount: float) -> void:
+	if current_hp >= max_hp:
+		return
+	_heal_accumulator += amount
+	if _heal_accumulator >= 1.0:
+		var heal_int: int = int(_heal_accumulator)
+		_heal_accumulator -= heal_int
+		current_hp = mini(current_hp + heal_int, max_hp)
+		health_changed.emit(current_hp, max_hp)
+
+## Apply rage buff from Rage Injection skill.
+func apply_rage(attack_mult: float, duration: float, cc_immune: bool) -> void:
+	rage_attack_mult = attack_mult
+	rage_timer = duration
+	rage_cc_immune = cc_immune
