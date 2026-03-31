@@ -157,6 +157,11 @@ func _on_player_leveled_up(_level: int) -> void:
 	AudioManager.play_sfx("level_up")
 	if is_instance_valid(player):
 		VfxManager.spawn_level_up(player.global_position)
+		# Per-level stat growth
+		player.attack_damage += BalanceConfig.ATTACK_PER_LEVEL
+		player.max_hp += BalanceConfig.HP_PER_LEVEL
+		player.current_hp = mini(player.current_hp + BalanceConfig.HP_PER_LEVEL, player.max_hp)
+		player.health_changed.emit(player.current_hp, player.max_hp)
 	level_up_panel.show_panel()
 
 

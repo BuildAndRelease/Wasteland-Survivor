@@ -20,9 +20,9 @@ var is_game_active: bool = false
 ## Whether boss was defeated this run (used by settlement screen).
 var boss_defeated: bool = false
 
-## XP required per level: base + (level - 1) * per_level.
+## XP required per level: base * level ^ exponent (power curve).
 func xp_for_level(level: int) -> int:
-	return BalanceConfig.XP_BASE + (level - 1) * BalanceConfig.XP_PER_LEVEL
+	return int(BalanceConfig.XP_BASE * pow(level, BalanceConfig.XP_EXPONENT))
 
 func xp_to_next_level() -> int:
 	return xp_for_level(player_level)

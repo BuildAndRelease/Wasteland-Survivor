@@ -6,7 +6,7 @@ extends RefCounted
 # --- Player ---
 const PLAYER_BASE_HP: int = 100
 const PLAYER_BASE_SPEED: float = 200.0
-const PLAYER_BASE_ATTACK: int = 10
+const PLAYER_BASE_ATTACK: int = 15
 const PLAYER_BASE_ATTACK_RANGE: float = 150.0
 const PLAYER_BASE_ATTACK_INTERVAL: float = 1.0
 const PLAYER_BASE_XP_RANGE: float = 50.0
@@ -14,11 +14,15 @@ const PLAYER_DODGE_SPEED_MULT: float = 3.0
 const PLAYER_DODGE_DURATION: float = 0.2
 const PLAYER_DODGE_COOLDOWN: float = 2.0
 
-# --- XP Curve ---
-## XP required = XP_BASE + (level - 1) * XP_PER_LEVEL
-const XP_BASE: int = 20
-const XP_PER_LEVEL: int = 15
-const PLAYER_MAX_LEVEL: int = 30
+# --- Level-up stat growth ---
+const ATTACK_PER_LEVEL: int = 2
+const HP_PER_LEVEL: int = 5
+
+# --- XP Curve (power function) ---
+## XP required = XP_BASE * level ^ XP_EXPONENT
+const XP_BASE: int = 15
+const XP_EXPONENT: float = 1.35
+const PLAYER_MAX_LEVEL: int = 50
 
 # --- Wave Timing ---
 const WAVE_DURATION: float = 180.0  # 3 min per wave
@@ -26,10 +30,10 @@ const MAX_WAVES: int = 5
 
 # --- Enemy Scaling Per Wave ---
 ## Applied as multipliers to base enemy stats.
-const WAVE_HP_MULTS: Array[float] = [1.0, 1.2, 1.4, 1.6, 1.8]
-const WAVE_SPEED_MULTS: Array[float] = [1.0, 1.1, 1.15, 1.2, 1.25]
-const WAVE_DAMAGE_MULTS: Array[float] = [1.0, 1.1, 1.2, 1.3, 1.4]
-const WAVE_SPAWN_INTERVALS: Array[float] = [0.8, 0.6, 0.5, 0.25, 0.2]
+const WAVE_HP_MULTS: Array[float] = [1.0, 1.5, 2.5, 4.0, 6.0]
+const WAVE_SPEED_MULTS: Array[float] = [1.0, 1.1, 1.2, 1.35, 1.5]
+const WAVE_DAMAGE_MULTS: Array[float] = [1.0, 1.3, 1.8, 2.5, 3.5]
+const WAVE_SPAWN_INTERVALS: Array[float] = [0.7, 0.5, 0.35, 0.2, 0.12]
 
 # --- Scrap Coin Rewards ---
 const SCRAP_PER_WAVE: int = 20
@@ -41,17 +45,17 @@ const SCRAP_VICTORY_BONUS: int = 100
 const XP_GEM_MAGNET_BASE: float = 50.0
 
 # --- Boss ---
-const BOSS_HP: int = 2000
-const BOSS_SPEED: float = 55.0
-const BOSS_CONTACT_DAMAGE: int = 30
-const BOSS_SLAM_DAMAGE: int = 40
-const BOSS_SLAM_RADIUS: float = 120.0
-const BOSS_SLAM_COOLDOWN: float = 5.0
-const BOSS_CHARGE_DAMAGE: int = 50
-const BOSS_CHARGE_SPEED: float = 300.0
-const BOSS_CHARGE_COOLDOWN: float = 8.0
-const BOSS_SUMMON_COUNT: int = 4
-const BOSS_SUMMON_COOLDOWN: float = 12.0
+const BOSS_HP: int = 5000
+const BOSS_SPEED: float = 60.0
+const BOSS_CONTACT_DAMAGE: int = 50
+const BOSS_SLAM_DAMAGE: int = 60
+const BOSS_SLAM_RADIUS: float = 130.0
+const BOSS_SLAM_COOLDOWN: float = 4.0
+const BOSS_CHARGE_DAMAGE: int = 70
+const BOSS_CHARGE_SPEED: float = 350.0
+const BOSS_CHARGE_COOLDOWN: float = 7.0
+const BOSS_SUMMON_COUNT: int = 6
+const BOSS_SUMMON_COOLDOWN: float = 10.0
 const BOSS_STUN_RESISTANCE: float = 0.5
 const BOSS_KNOCKBACK_RESISTANCE: float = 0.3
 

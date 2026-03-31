@@ -68,7 +68,7 @@ const CHARACTERS: Dictionary = {
 		"stat_mods": {
 			"max_hp": 100,
 			"move_speed": 200.0,
-			"attack_damage": 10,
+			"attack_damage": 15,
 			"xp_pickup_range": 50.0,
 		},
 	},
@@ -84,7 +84,7 @@ const CHARACTERS: Dictionary = {
 		"stat_mods": {
 			"max_hp": 90,
 			"move_speed": 210.0,
-			"attack_damage": 8,
+			"attack_damage": 13,
 			"xp_pickup_range": 80.0,
 		},
 	},
@@ -100,7 +100,7 @@ const CHARACTERS: Dictionary = {
 		"stat_mods": {
 			"max_hp": 110,
 			"move_speed": 180.0,
-			"attack_damage": 12,
+			"attack_damage": 18,
 			"xp_pickup_range": 50.0,
 		},
 	},
@@ -116,7 +116,7 @@ const CHARACTERS: Dictionary = {
 		"stat_mods": {
 			"max_hp": 70,
 			"move_speed": 200.0,
-			"attack_damage": 15,
+			"attack_damage": 22,
 			"xp_pickup_range": 50.0,
 		},
 	},
