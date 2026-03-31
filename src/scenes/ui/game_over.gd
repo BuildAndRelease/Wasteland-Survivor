@@ -30,10 +30,12 @@ func show_panel(survived_time: float, kills: int, level: int) -> void:
 
 
 func _on_restart_pressed() -> void:
+	AudioManager.play_sfx("ui_click")
 	visible = false
 	GameManager.start_game()
 
 
 func _on_menu_pressed() -> void:
+	AudioManager.play_sfx("ui_click")
 	visible = false
 	GameManager.go_to_menu()

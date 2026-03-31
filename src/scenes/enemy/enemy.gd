@@ -183,19 +183,12 @@ func _explode() -> void:
 		if dist <= explode_range * 1.5 and player_ref.has_method("take_damage"):
 			player_ref.take_damage(explode_damage, self)
 
-	# Visual: spawn a quick explosion effect
-	var effect := ColorRect.new()
-	effect.color = Color(1.0, 0.6, 0.0, 0.7)
-	var radius: float = explode_range * 1.5
-	effect.offset_left = -radius
-	effect.offset_top = -radius
-	effect.offset_right = radius
-	effect.offset_bottom = radius
-	effect.global_position = global_position
-	get_tree().current_scene.add_child(effect)
-	var tween := effect.create_tween()
-	tween.tween_property(effect, "modulate:a", 0.0, 0.3)
-	tween.tween_callback(effect.queue_free)
+	# VFX/SFX: explosion + screen shake
+	AudioManager.play_sfx_at("exploder_boom", global_position)
+	VfxManager.spawn_explosion(global_position, explode_range)
+	var game_world := get_tree().current_scene
+	if game_world and game_world.has_method("screen_shake"):
+		game_world.screen_shake(BalanceConfig.SHAKE_EXPLOSION_INTENSITY, BalanceConfig.SHAKE_EXPLOSION_DURATION)
 
 	# Die without normal XP drop — exploder gives XP through the explosion itself
 	GameManager.enemies_killed += 1
@@ -231,6 +224,9 @@ func take_damage(amount: int) -> void:
 	modulate = Color(1, 0.3, 0.3, 1)
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color.WHITE, 0.15)
+
+	AudioManager.play_sfx_at("enemy_hit", global_position, -5.0)
+	VfxManager.spawn_damage_number(global_position, amount, Color(1, 1, 1))
 
 	if current_hp <= 0:
 		_die()
@@ -293,6 +289,21 @@ func _update_dot(delta: float) -> void:
 
 func _die() -> void:
 	GameManager.enemies_killed += 1
+	# Death VFX/SFX based on enemy type
+	var death_color := Color(1, 0.3, 0.2)
+	var sfx_name := "enemy_death"
+	match enemy_type:
+		EnemyData.EnemyType.MUTANT_DOG:
+			death_color = Color(0.6, 0.4, 0.2)
+			sfx_name = "enemy_death_dog"
+		EnemyData.EnemyType.ACID_BUG:
+			death_color = Color(0.3, 0.9, 0.1)
+			sfx_name = "enemy_death_bug"
+		EnemyData.EnemyType.IRON_GIANT:
+			death_color = Color(0.5, 0.3, 0.2)
+			sfx_name = "enemy_death_giant"
+	AudioManager.play_sfx_at(sfx_name, global_position)
+	VfxManager.spawn_death_burst(global_position, death_color)
 	# Spawn XP gem
 	var gem := xp_gem_scene.instantiate()
 	gem.global_position = global_position

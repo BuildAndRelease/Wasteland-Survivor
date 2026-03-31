@@ -175,19 +175,13 @@ func _physics_process(delta: float) -> void:
 
 ## Attack pattern 1: Ground Slam — AoE damage around boss.
 func _ground_slam() -> void:
-	# Visual: expanding red circle
-	var effect := ColorRect.new()
-	effect.color = Color(0.8, 0.1, 0.0, 0.5)
-	var radius: float = slam_radius
-	effect.offset_left = -radius
-	effect.offset_top = -radius
-	effect.offset_right = radius
-	effect.offset_bottom = radius
-	effect.global_position = global_position
-	get_tree().current_scene.add_child(effect)
-	var tween := effect.create_tween()
-	tween.tween_property(effect, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(effect.queue_free)
+	# VFX/SFX: shockwave + explosion + screen shake
+	AudioManager.play_sfx_at("boss_slam", global_position)
+	VfxManager.spawn_shockwave(global_position, slam_radius)
+	VfxManager.spawn_explosion(global_position, slam_radius * 0.5, Color(0.8, 0.1, 0.0))
+	var game_world := get_tree().current_scene
+	if game_world and game_world.has_method("screen_shake"):
+		game_world.screen_shake(BalanceConfig.SHAKE_BOSS_SLAM_INTENSITY, BalanceConfig.SHAKE_BOSS_SLAM_DURATION)
 
 	# Damage player if in range
 	if is_instance_valid(player_ref):
@@ -202,6 +196,7 @@ func _start_charge() -> void:
 	_is_charging = true
 	_charge_direction = (player_ref.global_position - global_position).normalized()
 	_charge_duration = 0.0
+	AudioManager.play_sfx_at("boss_charge", global_position)
 	# Visual: turn orange during charge
 	modulate = Color(1.0, 0.5, 0.0, 1.0)
 
@@ -209,6 +204,8 @@ func _process_charge(delta: float) -> void:
 	velocity = _charge_direction * charge_speed + knockback_velocity
 	move_and_slide()
 	_charge_duration += delta
+	# Trail particles during charge
+	VfxManager.spawn_trail(global_position, Color(1.0, 0.4, 0.0))
 
 	# Check if hit player during charge
 	if is_instance_valid(player_ref):
@@ -225,6 +222,8 @@ func _process_charge(delta: float) -> void:
 
 ## Attack pattern 3: Summon Minions — spawn walkers around the boss.
 func _summon_minions() -> void:
+	AudioManager.play_sfx_at("boss_summon", global_position)
+	VfxManager.spawn_skill_flash(global_position, Color(0.8, 0.0, 0.8))
 	for i in range(summon_count):
 		var minion := enemy_scene.instantiate()
 		var walker_data: Dictionary = EnemyData.get_type_data(EnemyData.EnemyType.WALKER)
@@ -254,6 +253,8 @@ func take_damage(amount: int) -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color.WHITE, 0.15)
 	health_changed.emit(current_hp, max_hp)
+	AudioManager.play_sfx_at("enemy_hit", global_position, -5.0)
+	VfxManager.spawn_damage_number(global_position, amount, Color(1, 0.8, 0.2))
 
 	if current_hp <= 0:
 		_die()
@@ -314,6 +315,14 @@ func _update_dot(delta: float) -> void:
 
 func _die() -> void:
 	GameManager.enemies_killed += 1
+	# Boss death: dramatic VFX/SFX + screen shake
+	AudioManager.play_sfx_at("boss_death", global_position)
+	VfxManager.spawn_explosion(global_position, 80.0, Color(1.0, 0.3, 0.0))
+	VfxManager.spawn_explosion(global_position, 50.0, Color(1.0, 0.6, 0.0))
+	VfxManager.spawn_shockwave(global_position, 150.0)
+	var game_world := get_tree().current_scene
+	if game_world and game_world.has_method("screen_shake"):
+		game_world.screen_shake(BalanceConfig.SHAKE_BOSS_SLAM_INTENSITY * 1.5, BalanceConfig.SHAKE_BOSS_SLAM_DURATION * 2.0)
 	# Boss drops many XP gems in a spread
 	for i in range(10):
 		var gem := xp_gem_scene.instantiate()

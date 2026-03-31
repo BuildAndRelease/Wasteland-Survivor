@@ -6,8 +6,8 @@ extends Node2D
 signal wave_started(wave_number: int)
 signal boss_spawned
 
-@export var wave_duration: float = 180.0  # 3 minutes per wave
-@export var max_waves: int = 5
+@export var wave_duration: float = BalanceConfig.WAVE_DURATION
+@export var max_waves: int = BalanceConfig.MAX_WAVES
 @export var spawn_margin: float = 50.0
 
 var spawn_timer: float = 0.0
@@ -45,6 +45,7 @@ func _process(delta: float) -> void:
 		GameManager.current_wave = current_wave
 		GameManager.wave_changed.emit(current_wave)
 		wave_started.emit(current_wave)
+		AudioManager.play_sfx("wave_announce")
 
 		# Spawn boss on final wave
 		if current_wave == max_waves and not _boss_spawned:
@@ -80,6 +81,7 @@ func _spawn_enemy() -> void:
 		scaled_data["explode_damage"] = int(type_data.get("explode_damage", 35) * wave_config.get("damage_mult", 1.0))
 
 	enemy.configure(scaled_data)
+	enemy.enemy_type = enemy_type
 	enemy.global_position = _random_edge_position()
 	get_tree().current_scene.add_child(enemy)
 
@@ -96,6 +98,7 @@ func _spawn_boss() -> void:
 
 func _on_boss_died() -> void:
 	# Boss defeated = game won. Trigger game over (victory) after a short delay.
+	AudioManager.play_sfx("victory")
 	var timer := get_tree().create_timer(2.0)
 	timer.timeout.connect(func(): GameManager.trigger_game_over())
 

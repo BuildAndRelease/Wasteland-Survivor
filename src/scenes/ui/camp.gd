@@ -168,6 +168,7 @@ func _update_upgrade_display() -> void:
 
 
 func _on_character_pressed(char_id: String) -> void:
+	AudioManager.play_sfx("ui_click")
 	var unlocked: bool = SaveManager.is_character_unlocked(char_id)
 	if unlocked:
 		_selected_character = char_id
@@ -178,6 +179,7 @@ func _on_character_pressed(char_id: String) -> void:
 		var data: Dictionary = CampData.get_character(char_id)
 		var cost: int = data.get("cost", 0)
 		if SaveManager.spend_scrap_coins(cost):
+			AudioManager.play_sfx("coin_earned")
 			SaveManager.unlock_character(char_id)
 			_selected_character = char_id
 			SaveManager.select_character(char_id)
@@ -188,21 +190,25 @@ func _on_character_pressed(char_id: String) -> void:
 
 
 func _on_upgrade_pressed(upgrade_id: String) -> void:
+	AudioManager.play_sfx("ui_click")
 	var current_level: int = SaveManager.get_upgrade_level(upgrade_id)
 	var cost: int = CampData.get_next_upgrade_cost(upgrade_id, current_level)
 	if cost < 0:
 		return
 	if SaveManager.spend_scrap_coins(cost):
+		AudioManager.play_sfx("coin_earned")
 		SaveManager.set_upgrade_level(upgrade_id, current_level + 1)
 		_update_coins_display()
 		_update_upgrade_display()
 
 
 func _on_start_pressed() -> void:
+	AudioManager.play_sfx("ui_click")
 	GameManager.start_game()
 
 
 func _on_menu_pressed() -> void:
+	AudioManager.play_sfx("ui_click")
 	GameManager.go_to_menu()
 
 

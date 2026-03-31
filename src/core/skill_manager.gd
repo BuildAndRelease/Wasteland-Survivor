@@ -224,6 +224,9 @@ func _trigger_fire_bomb(level_data: Dictionary) -> void:
 		cooldown_timers["fire_bomb"] = 0.5
 		return
 
+	AudioManager.play_sfx_at("exploder_boom", nearest.global_position, -3.0)
+	VfxManager.spawn_skill_flash(player_ref.global_position, Color(1.0, 0.4, 0.0))
+
 	# Firestorm combo: burning fog replaces normal fire bomb
 	if active_combos.has("firestorm"):
 		_spawn_firestorm(nearest)
@@ -245,6 +248,8 @@ func _trigger_poison_gas(level_data: Dictionary) -> void:
 		cooldown_timers["poison_gas"] = 0.5
 		return
 
+	VfxManager.spawn_skill_flash(player_ref.global_position, Color(0.3, 0.8, 0.1))
+
 	# Firestorm combo: burning fog replaces normal poison gas
 	if active_combos.has("firestorm"):
 		_spawn_firestorm(nearest)
@@ -261,6 +266,8 @@ func _trigger_poison_gas(level_data: Dictionary) -> void:
 
 
 func _trigger_emp_pulse(level_data: Dictionary) -> void:
+	AudioManager.play_sfx("exploder_boom", -5.0)
+	VfxManager.spawn_skill_flash(player_ref.global_position, Color(0.3, 0.5, 1.0))
 	var pulse: Node2D = _emp_pulse_scene.instantiate()
 	pulse.global_position = player_ref.global_position
 	pulse.radius = level_data.radius
@@ -271,6 +278,7 @@ func _trigger_emp_pulse(level_data: Dictionary) -> void:
 
 func _trigger_spike_trap(level_data: Dictionary) -> void:
 	var count: int = level_data.trap_count
+	VfxManager.spawn_skill_flash(player_ref.global_position, Color(0.6, 0.6, 0.6))
 
 	# Death Trap Field combo: auto-firing traps replace normal traps
 	if active_combos.has("death_trap_field"):
@@ -292,6 +300,8 @@ func _trigger_spike_trap(level_data: Dictionary) -> void:
 func _trigger_rage_injection(level_data: Dictionary) -> void:
 	if is_instance_valid(player_ref):
 		player_ref.apply_rage(level_data.attack_speed_mult, level_data.duration, level_data.get("cc_immune", false))
+		AudioManager.play_sfx("skill_pickup")
+		VfxManager.spawn_skill_flash(player_ref.global_position, Color(1.0, 0.2, 0.2))
 		# Spawn visual effect on player
 		var vfx: Node2D = _rage_injection_scene.instantiate()
 		vfx.duration = level_data.duration
@@ -301,6 +311,9 @@ func _trigger_rage_injection(level_data: Dictionary) -> void:
 func _trigger_iron_fist(level_data: Dictionary) -> void:
 	if not is_instance_valid(player_ref):
 		return
+
+	AudioManager.play_sfx_at("player_attack", player_ref.global_position, 3.0)
+	VfxManager.spawn_skill_flash(player_ref.global_position, Color(0.8, 0.6, 0.2))
 
 	var player_dir: Vector2 = player_ref.velocity.normalized()
 	if player_dir.length() < 0.1:

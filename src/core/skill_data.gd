@@ -30,7 +30,7 @@ const BASE_SKILLS: Dictionary = {
 		"type": SkillType.ACTIVE_AOE,
 		"description": "Throw a molotov that creates a burning area.",
 		"icon_color": Color(1.0, 0.4, 0.1, 1),
-		"cooldown": 5.0,
+		"cooldown": BalanceConfig.FIRE_BOMB_COOLDOWN,
 		"levels": [
 			{"desc": "Burns for 3s", "duration": 3.0, "radius": 60.0, "damage_per_tick": 5, "tick_interval": 0.5},
 			{"desc": "Range +50%", "duration": 3.0, "radius": 90.0, "damage_per_tick": 5, "tick_interval": 0.5},
@@ -44,7 +44,7 @@ const BASE_SKILLS: Dictionary = {
 		"type": SkillType.ACTIVE_CONTROL,
 		"description": "Release poison fog that slows and damages enemies.",
 		"icon_color": Color(0.4, 0.9, 0.2, 1),
-		"cooldown": 6.0,
+		"cooldown": BalanceConfig.POISON_GAS_COOLDOWN,
 		"levels": [
 			{"desc": "Slow enemies", "duration": 4.0, "radius": 70.0, "slow_amount": 0.5, "damage_per_tick": 3, "tick_interval": 0.5},
 			{"desc": "Damage +100%", "duration": 4.0, "radius": 70.0, "slow_amount": 0.5, "damage_per_tick": 6, "tick_interval": 0.5},
@@ -58,7 +58,7 @@ const BASE_SKILLS: Dictionary = {
 		"type": SkillType.ACTIVE_AOE,
 		"description": "Release a ring shock that stuns nearby enemies.",
 		"icon_color": Color(0.3, 0.6, 1.0, 1),
-		"cooldown": 8.0,
+		"cooldown": BalanceConfig.EMP_PULSE_COOLDOWN,
 		"levels": [
 			{"desc": "Stun 1s", "radius": 100.0, "stun_duration": 1.0, "damage": 15},
 			{"desc": "Range +50%", "radius": 150.0, "stun_duration": 1.0, "damage": 15},
@@ -100,7 +100,7 @@ const BASE_SKILLS: Dictionary = {
 		"type": SkillType.ACTIVE_TRAP,
 		"description": "Place a trap that damages and slows enemies.",
 		"icon_color": Color(0.7, 0.7, 0.7, 1),
-		"cooldown": 7.0,
+		"cooldown": BalanceConfig.SPIKE_TRAP_COOLDOWN,
 		"levels": [
 			{"desc": "Damage + slow", "damage": 20, "slow_amount": 0.5, "slow_duration": 2.0, "trap_count": 1, "duration": 6.0},
 			{"desc": "Place 2 at once", "damage": 20, "slow_amount": 0.5, "slow_duration": 2.0, "trap_count": 2, "duration": 6.0},
@@ -128,7 +128,7 @@ const BASE_SKILLS: Dictionary = {
 		"type": SkillType.ACTIVE_BUFF,
 		"description": "Boost attack speed temporarily.",
 		"icon_color": Color(0.9, 0.2, 0.2, 1),
-		"cooldown": 12.0,
+		"cooldown": BalanceConfig.RAGE_INJECTION_COOLDOWN,
 		"levels": [
 			{"desc": "Attack speed +30% for 5s", "attack_speed_mult": 1.3, "duration": 5.0},
 			{"desc": "Attack speed +50% for 5s", "attack_speed_mult": 1.5, "duration": 5.0},
@@ -142,7 +142,7 @@ const BASE_SKILLS: Dictionary = {
 		"type": SkillType.ACTIVE_MELEE,
 		"description": "Heavy melee cone attack.",
 		"icon_color": Color(0.6, 0.4, 0.2, 1),
-		"cooldown": 4.0,
+		"cooldown": BalanceConfig.IRON_FIST_COOLDOWN,
 		"levels": [
 			{"desc": "Cone heavy hit", "damage": 30, "range": 80.0, "cone_angle": 60.0, "knockback": 100.0},
 			{"desc": "Knockback +100%", "damage": 30, "range": 80.0, "cone_angle": 60.0, "knockback": 200.0},
@@ -161,7 +161,7 @@ const COMBO_SKILLS: Dictionary = {
 		"description": "Poison fog becomes burning fog, range + damage doubled.",
 		"icon_color": Color(1.0, 0.3, 0.0, 1),
 		"requirements": {"fire_bomb": 3, "poison_gas": 3},
-		"effect": {"range_mult": 2.0, "damage_mult": 2.0},
+		"effect": {"range_mult": BalanceConfig.FIRESTORM_RANGE_MULT, "damage_mult": BalanceConfig.FIRESTORM_DAMAGE_MULT},
 	},
 	"electromagnetic_fortress": {
 		"id": "electromagnetic_fortress",
@@ -191,7 +191,7 @@ const COMBO_SKILLS: Dictionary = {
 		"description": "Lower HP = higher attack + lifesteal.",
 		"icon_color": Color(0.8, 0.1, 0.1, 1),
 		"requirements": {"rage_injection": 3, "mutant_regen": 3},
-		"effect": {"max_attack_bonus": 1.0, "lifesteal_percent": 0.1},
+		"effect": {"max_attack_bonus": BalanceConfig.BERSERKER_MAX_ATTACK_BONUS, "lifesteal_percent": BalanceConfig.BERSERKER_LIFESTEAL_PERCENT},
 	},
 	"iron_fist_barrage": {
 		"id": "iron_fist_barrage",

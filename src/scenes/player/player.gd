@@ -5,15 +5,15 @@ extends CharacterBody2D
 signal health_changed(current_hp: int, max_hp: int)
 signal died
 
-@export var max_hp: int = 100
-@export var move_speed: float = 200.0
-@export var attack_range: float = 150.0
-@export var attack_interval: float = 1.0
-@export var attack_damage: int = 10
-@export var xp_pickup_range: float = 50.0
-@export var dodge_speed_mult: float = 3.0
-@export var dodge_duration: float = 0.2
-@export var dodge_cooldown: float = 2.0
+@export var max_hp: int = BalanceConfig.PLAYER_BASE_HP
+@export var move_speed: float = BalanceConfig.PLAYER_BASE_SPEED
+@export var attack_range: float = BalanceConfig.PLAYER_BASE_ATTACK_RANGE
+@export var attack_interval: float = BalanceConfig.PLAYER_BASE_ATTACK_INTERVAL
+@export var attack_damage: int = BalanceConfig.PLAYER_BASE_ATTACK
+@export var xp_pickup_range: float = BalanceConfig.PLAYER_BASE_XP_RANGE
+@export var dodge_speed_mult: float = BalanceConfig.PLAYER_DODGE_SPEED_MULT
+@export var dodge_duration: float = BalanceConfig.PLAYER_DODGE_DURATION
+@export var dodge_cooldown: float = BalanceConfig.PLAYER_DODGE_COOLDOWN
 
 var current_hp: int
 var attack_timer: float = 0.0
@@ -97,6 +97,7 @@ func _handle_dodge(delta: float) -> void:
 		is_dodging = true
 		dodge_timer = dodge_duration
 		dodge_cooldown_timer = dodge_cooldown
+		AudioManager.play_sfx("dodge")
 
 func _handle_attack(delta: float) -> void:
 	attack_timer -= delta
@@ -106,6 +107,7 @@ func _handle_attack(delta: float) -> void:
 	var nearest := _find_nearest_enemy()
 	if nearest and global_position.distance_to(nearest.global_position) <= attack_range:
 		_fire_projectile(nearest.global_position)
+		AudioManager.play_sfx_at("player_attack", global_position)
 		if double_shot:
 			# Fire a second projectile with slight offset
 			var offset := (nearest.global_position - global_position).normalized().rotated(0.15) * 10.0
@@ -151,6 +153,7 @@ func _collect_xp_gems() -> void:
 			continue
 		if global_position.distance_to(gem.global_position) <= effective_range:
 			GameManager.add_xp(gem.xp_value)
+			AudioManager.play_sfx("xp_pickup", -5.0)
 			gem.collect()
 
 func take_damage(amount: int, source: Node2D = null) -> void:
@@ -160,12 +163,17 @@ func take_damage(amount: int, source: Node2D = null) -> void:
 	current_hp -= actual
 	health_changed.emit(current_hp, max_hp)
 
+	AudioManager.play_sfx("player_hit")
+	VfxManager.spawn_damage_number(global_position, actual, Color(1.0, 0.3, 0.3))
+	_request_screen_shake(BalanceConfig.SHAKE_PLAYER_HIT_INTENSITY, BalanceConfig.SHAKE_PLAYER_HIT_DURATION)
+
 	# Scrap Shield Lv3: reflect melee damage back to attacker
 	if reflect_melee and source and source.has_method("take_damage"):
 		source.take_damage(int(actual * 0.5))
 
 	if current_hp <= 0:
 		current_hp = 0
+		AudioManager.play_sfx("player_death")
 		died.emit()
 		GameManager.trigger_game_over()
 
@@ -185,3 +193,10 @@ func apply_rage(attack_mult: float, duration: float, cc_immune: bool) -> void:
 	rage_attack_mult = attack_mult
 	rage_timer = duration
 	rage_cc_immune = cc_immune
+
+
+## Request screen shake from game_world.
+func _request_screen_shake(intensity: float, duration: float) -> void:
+	var game_world := get_tree().current_scene
+	if game_world and game_world.has_method("screen_shake"):
+		game_world.screen_shake(intensity, duration)

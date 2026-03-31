@@ -53,6 +53,7 @@ func _update_buttons() -> void:
 func _on_skill_pressed(index: int) -> void:
 	if index >= current_choices.size():
 		return
+	AudioManager.play_sfx("skill_pickup")
 	var choice: Dictionary = current_choices[index]
 	if skill_manager:
 		skill_manager.add_skill(choice.skill_id)

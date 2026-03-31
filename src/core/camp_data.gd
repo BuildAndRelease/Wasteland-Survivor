@@ -115,21 +115,15 @@ const CHARACTERS: Dictionary = {
 	},
 }
 
-## Scrap coin reward formula constants.
-const SCRAP_PER_WAVE: int = 20
-const SCRAP_PER_KILL: float = 0.5
-const SCRAP_BOSS_BONUS: int = 200
-const SCRAP_VICTORY_BONUS: int = 100
-
 
 ## Calculate scrap coins earned from a run.
 static func calculate_scrap_coins(wave_reached: int, enemies_killed: int, boss_defeated: bool) -> int:
 	var coins: int = 0
-	coins += wave_reached * SCRAP_PER_WAVE
-	coins += int(enemies_killed * SCRAP_PER_KILL)
+	coins += wave_reached * BalanceConfig.SCRAP_PER_WAVE
+	coins += int(enemies_killed * BalanceConfig.SCRAP_PER_KILL)
 	if boss_defeated:
-		coins += SCRAP_BOSS_BONUS
-		coins += SCRAP_VICTORY_BONUS
+		coins += BalanceConfig.SCRAP_BOSS_BONUS
+		coins += BalanceConfig.SCRAP_VICTORY_BONUS
 	return coins
 
 

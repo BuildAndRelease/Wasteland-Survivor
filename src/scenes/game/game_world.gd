@@ -13,8 +13,18 @@ extends Node2D
 
 var skill_manager: SkillManager = null
 
+# Screen shake state
+var _shake_intensity: float = 0.0
+var _shake_timer: float = 0.0
+
+# Screen transition overlay
+var _fade_overlay: ColorRect = null
+
 
 func _ready() -> void:
+	# Build fade overlay for screen transitions
+	_build_fade_overlay()
+
 	# Apply character stats before anything else
 	_apply_character_stats()
 	_apply_permanent_upgrades()
@@ -42,10 +52,58 @@ func _ready() -> void:
 
 	GameManager.set_state(GameManager.State.GAMEPLAY)
 
+	# Fade in from black
+	_fade_in()
 
-func _process(_delta: float) -> void:
+
+func _build_fade_overlay() -> void:
+	var canvas := CanvasLayer.new()
+	canvas.name = "FadeOverlay"
+	canvas.layer = 100
+	_fade_overlay = ColorRect.new()
+	_fade_overlay.color = Color(0, 0, 0, 1)
+	_fade_overlay.anchor_right = 1.0
+	_fade_overlay.anchor_bottom = 1.0
+	_fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(_fade_overlay)
+	add_child(canvas)
+
+
+func _fade_in() -> void:
+	_fade_overlay.color.a = 1.0
+	var tween := create_tween()
+	tween.tween_property(_fade_overlay, "color:a", 0.0, 0.5)
+	tween.tween_callback(func(): _fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE)
+
+
+func _fade_out(callback: Callable) -> void:
+	_fade_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_fade_overlay.color.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(_fade_overlay, "color:a", 1.0, 0.4)
+	tween.tween_callback(callback)
+
+
+func _process(delta: float) -> void:
 	if is_instance_valid(player):
 		camera.global_position = player.global_position
+		# Apply screen shake offset
+		if _shake_timer > 0.0:
+			_shake_timer -= delta
+			var offset := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _shake_intensity
+			camera.offset = offset
+			if _shake_timer <= 0.0:
+				camera.offset = Vector2.ZERO
+		# Dash trail particles
+		if player.is_dodging:
+			VfxManager.spawn_trail(player.global_position, Color(0.5, 0.8, 1.0))
+
+
+## Trigger screen shake from anywhere via game_world reference.
+func screen_shake(intensity: float, duration: float) -> void:
+	if intensity > _shake_intensity:
+		_shake_intensity = intensity
+		_shake_timer = duration
 
 
 func _apply_character_stats() -> void:
@@ -94,6 +152,9 @@ func _grant_starting_skill() -> void:
 
 
 func _on_player_leveled_up(_level: int) -> void:
+	AudioManager.play_sfx("level_up")
+	if is_instance_valid(player):
+		VfxManager.spawn_level_up(player.global_position)
 	level_up_panel.show_panel()
 
 

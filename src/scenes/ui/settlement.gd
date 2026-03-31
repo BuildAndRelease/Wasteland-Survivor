@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Settlement screen shown after game over or victory.
-## Displays run stats and scrap coins earned, then returns to camp.
+## Displays run stats and scrap coins earned with counting animation, then returns to camp.
 
 @onready var title_label: Label = $Content/TitleLabel
 @onready var time_label: Label = $Content/StatsContainer/TimeLabel
@@ -12,6 +12,8 @@ extends CanvasLayer
 @onready var return_button: Button = $Content/ReturnButton
 
 var _scrap_earned: int = 0
+var _coin_display: int = 0
+var _coin_counting: bool = false
 
 
 func _ready() -> void:
@@ -35,12 +37,52 @@ func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_de
 
 	# Calculate and award scrap coins
 	_scrap_earned = CampData.calculate_scrap_coins(wave, kills, boss_defeated)
-	coins_label.text = "Scrap Coins Earned: +%d" % _scrap_earned
 	SaveManager.add_scrap_coins(_scrap_earned)
 
+	# Animate coin counter from 0 to earned amount
+	_coin_display = 0
+	coins_label.text = "Scrap Coins Earned: +0"
 	visible = true
+
+	# Fade in stats
+	modulate.a = 0.0
+	var fade_tween := create_tween()
+	fade_tween.tween_property(self, "modulate:a", 1.0, 0.3)
+	fade_tween.tween_interval(0.5)
+	fade_tween.tween_callback(_start_coin_count)
+
+
+func _start_coin_count() -> void:
+	if _scrap_earned <= 0:
+		coins_label.text = "Scrap Coins Earned: +0"
+		return
+	_coin_counting = true
+	var duration: float = clampf(float(_scrap_earned) / 200.0, 0.5, 2.0)
+	var tween := create_tween()
+	tween.tween_method(_update_coin_display, 0, _scrap_earned, duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_callback(_on_coin_count_done)
+
+
+func _update_coin_display(value: int) -> void:
+	if value != _coin_display:
+		_coin_display = value
+		coins_label.text = "Scrap Coins Earned: +%d" % _coin_display
+		# Play coin tick SFX at intervals
+		if _coin_display % maxi(int(_scrap_earned / 10.0), 1) == 0:
+			AudioManager.play_sfx("coin_earned", -8.0)
+
+
+func _on_coin_count_done() -> void:
+	_coin_counting = false
+	coins_label.text = "Scrap Coins Earned: +%d" % _scrap_earned
+	AudioManager.play_sfx("coin_earned")
+	# Pop effect on final number
+	var tween := create_tween()
+	tween.tween_property(coins_label, "scale", Vector2(1.2, 1.2), 0.1)
+	tween.tween_property(coins_label, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BOUNCE)
 
 
 func _on_return_pressed() -> void:
+	AudioManager.play_sfx("ui_click")
 	visible = false
 	GameManager.go_to_camp()

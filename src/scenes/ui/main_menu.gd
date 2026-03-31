@@ -7,4 +7,5 @@ func _ready() -> void:
 
 
 func _on_start_pressed() -> void:
+	AudioManager.play_sfx("ui_click")
 	GameManager.go_to_camp()

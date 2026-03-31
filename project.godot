@@ -17,6 +17,8 @@ config/icon="res://icon.svg"
 
 GameManager="*res://src/core/game_manager.gd"
 SaveManager="*res://src/core/save_manager.gd"
+AudioManager="*res://src/core/audio_manager.gd"
+VfxManager="*res://src/core/vfx_manager.gd"
 
 [display]
 
