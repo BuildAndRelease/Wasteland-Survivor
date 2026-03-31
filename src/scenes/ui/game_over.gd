@@ -1,6 +1,8 @@
 extends CanvasLayer
 ## Game over panel: shows final stats with restart and menu buttons.
+## Shows "VICTORY" if boss was defeated, "GAME OVER" otherwise.
 
+@onready var title_label: Label = $Content/GameOverLabel
 @onready var time_label: Label = $Content/TimeLabel
 @onready var kills_label: Label = $Content/KillsLabel
 @onready var level_label: Label = $Content/LevelLabel
@@ -16,6 +18,14 @@ func show_panel(survived_time: float, kills: int, level: int) -> void:
 	time_label.text = "Survived: %d:%02d" % [mins, secs]
 	kills_label.text = "Enemies Killed: %d" % kills
 	level_label.text = "Level Reached: %d" % level
+
+	# Check if boss was defeated (no boss nodes alive = victory)
+	var bosses := get_tree().get_nodes_in_group("boss")
+	if bosses.size() == 0 and GameManager.current_wave >= 5:
+		title_label.text = "VICTORY!"
+	else:
+		title_label.text = "GAME OVER"
+
 	visible = true
 
 

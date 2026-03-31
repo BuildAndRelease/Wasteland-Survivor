@@ -1,11 +1,31 @@
 extends CharacterBody2D
-## Enemy: walks toward player, deals contact damage, drops XP on death.
-## Supports speed modifiers (slow), stun, DoT, and knockback from skills.
+## Enemy: configurable enemy that supports multiple behaviors.
+## Behaviors: "chase" (walk toward player), "ranged" (keep distance + shoot),
+## "explode" (rush player, explode on contact or proximity).
+## Stats are set externally by the spawner from EnemyData.
 
 @export var max_hp: int = 30
 @export var move_speed: float = 80.0
 @export var contact_damage: int = 10
 @export var xp_drop: int = 5
+
+## Enemy type metadata (set by spawner via configure()).
+var enemy_type: int = EnemyData.EnemyType.WALKER
+var behavior: String = "chase"
+
+## Ranged attack vars (used when behavior == "ranged").
+var attack_range: float = 250.0
+var attack_interval: float = 2.0
+var attack_timer: float = 0.0
+var projectile_speed: float = 200.0
+var projectile_damage: int = 12
+
+## Explode vars (used when behavior == "explode").
+var explode_range: float = 60.0
+var explode_damage: int = 35
+var explode_fuse: float = 0.5
+var _is_exploding: bool = false
+var _explode_timer: float = 0.0
 
 var current_hp: int
 var player_ref: Node2D = null
@@ -22,16 +42,54 @@ var knockback_decay: float = 800.0
 var dot_effects: Array = []
 
 var xp_gem_scene: PackedScene
+var _acid_projectile_scene: PackedScene
 
 func _ready() -> void:
 	current_hp = max_hp
 	add_to_group("enemies")
 	xp_gem_scene = preload("res://src/scenes/xp_gem/xp_gem.tscn")
+	_acid_projectile_scene = preload("res://src/scenes/enemy/acid_projectile.tscn")
 	# Find player
 	await get_tree().process_frame
 	var players := get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		player_ref = players[0]
+
+## Configure this enemy from an EnemyData type dictionary.
+## Call after instantiation, before adding to scene tree.
+func configure(type_data: Dictionary) -> void:
+	max_hp = type_data.get("max_hp", 30)
+	move_speed = type_data.get("move_speed", 80.0)
+	contact_damage = type_data.get("contact_damage", 10)
+	xp_drop = type_data.get("xp_drop", 5)
+	behavior = type_data.get("behavior", "chase")
+	current_hp = max_hp
+
+	# Visual setup
+	var sprite: ColorRect = $Sprite
+	var col_shape: CollisionShape2D = $CollisionShape2D
+	var esize: Vector2 = type_data.get("size", Vector2(20, 20))
+	var ecolor: Color = type_data.get("color", Color(0.8, 0.2, 0.2, 1.0))
+	sprite.color = ecolor
+	sprite.offset_left = -esize.x / 2.0
+	sprite.offset_top = -esize.y / 2.0
+	sprite.offset_right = esize.x / 2.0
+	sprite.offset_bottom = esize.y / 2.0
+	var shape := RectangleShape2D.new()
+	shape.size = esize
+	col_shape.shape = shape
+
+	# Behavior-specific setup
+	if behavior == "ranged":
+		attack_range = type_data.get("attack_range", 250.0)
+		attack_interval = type_data.get("attack_interval", 2.0)
+		projectile_speed = type_data.get("projectile_speed", 200.0)
+		projectile_damage = type_data.get("projectile_damage", 12)
+		attack_timer = attack_interval * randf()  # stagger first shot
+	elif behavior == "explode":
+		explode_range = type_data.get("explode_range", 60.0)
+		explode_damage = type_data.get("explode_damage", 35)
+		explode_fuse = type_data.get("explode_fuse", 0.5)
 
 func _physics_process(delta: float) -> void:
 	if not GameManager.is_game_active:
@@ -49,16 +107,123 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if is_instance_valid(player_ref):
-		var dir := (player_ref.global_position - global_position).normalized()
-		velocity = dir * move_speed * speed_mult + knockback_velocity
-		move_and_slide()
+	if not is_instance_valid(player_ref):
+		return
 
-		# Contact damage — pass self as source for Scrap Shield melee reflect
-		if damage_cooldown <= 0 and global_position.distance_to(player_ref.global_position) < 20.0:
-			if player_ref.has_method("take_damage"):
-				player_ref.take_damage(contact_damage, self)
-				damage_cooldown = 1.0
+	match behavior:
+		"chase":
+			_behavior_chase(delta)
+		"ranged":
+			_behavior_ranged(delta)
+		"explode":
+			_behavior_explode(delta)
+
+## Standard chase: run straight at the player.
+func _behavior_chase(delta: float) -> void:
+	var dir := (player_ref.global_position - global_position).normalized()
+	velocity = dir * move_speed * speed_mult + knockback_velocity
+	move_and_slide()
+	_try_contact_damage()
+
+## Ranged: approach to attack range, then strafe and shoot.
+func _behavior_ranged(delta: float) -> void:
+	var dist := global_position.distance_to(player_ref.global_position)
+	var dir := (player_ref.global_position - global_position).normalized()
+
+	# Move closer if too far, retreat if too close
+	var preferred_range: float = attack_range * 0.8
+	if dist > attack_range:
+		velocity = dir * move_speed * speed_mult + knockback_velocity
+	elif dist < preferred_range * 0.5:
+		velocity = -dir * move_speed * speed_mult * 0.6 + knockback_velocity
+	else:
+		# Strafe perpendicular
+		var strafe := dir.rotated(PI / 2.0)
+		velocity = strafe * move_speed * speed_mult * 0.4 + knockback_velocity
+	move_and_slide()
+
+	# Shoot
+	attack_timer -= delta
+	if attack_timer <= 0.0 and dist <= attack_range:
+		_fire_acid_projectile()
+		attack_timer = attack_interval
+
+	_try_contact_damage()
+
+## Explode: rush player, trigger explosion on proximity.
+func _behavior_explode(delta: float) -> void:
+	if _is_exploding:
+		_explode_timer -= delta
+		# Pulse visual
+		modulate = Color(1.0, 0.5, 0.0, 1.0) if fmod(_explode_timer, 0.15) > 0.075 else Color(1.0, 1.0, 0.0, 1.0)
+		velocity = knockback_velocity
+		move_and_slide()
+		if _explode_timer <= 0.0:
+			_explode()
+		return
+
+	var dir := (player_ref.global_position - global_position).normalized()
+	velocity = dir * move_speed * speed_mult + knockback_velocity
+	move_and_slide()
+
+	var dist := global_position.distance_to(player_ref.global_position)
+	if dist < explode_range:
+		_start_explode()
+
+func _start_explode() -> void:
+	_is_exploding = true
+	_explode_timer = explode_fuse
+	# Stop chasing — stand and pulse
+	move_speed = 0.0
+
+func _explode() -> void:
+	# Deal AoE damage to player if in range
+	if is_instance_valid(player_ref):
+		var dist := global_position.distance_to(player_ref.global_position)
+		if dist <= explode_range * 1.5 and player_ref.has_method("take_damage"):
+			player_ref.take_damage(explode_damage, self)
+
+	# Visual: spawn a quick explosion effect
+	var effect := ColorRect.new()
+	effect.color = Color(1.0, 0.6, 0.0, 0.7)
+	var radius: float = explode_range * 1.5
+	effect.offset_left = -radius
+	effect.offset_top = -radius
+	effect.offset_right = radius
+	effect.offset_bottom = radius
+	effect.global_position = global_position
+	get_tree().current_scene.add_child(effect)
+	var tween := effect.create_tween()
+	tween.tween_property(effect, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(effect.queue_free)
+
+	# Die without normal XP drop — exploder gives XP through the explosion itself
+	GameManager.enemies_killed += 1
+	var gem := xp_gem_scene.instantiate()
+	gem.global_position = global_position
+	gem.xp_value = xp_drop
+	get_tree().current_scene.add_child(gem)
+	queue_free()
+
+func _fire_acid_projectile() -> void:
+	if not is_instance_valid(player_ref):
+		return
+	var proj := _acid_projectile_scene.instantiate()
+	proj.global_position = global_position
+	proj.direction = (player_ref.global_position - global_position).normalized()
+	proj.speed = projectile_speed
+	proj.damage = projectile_damage
+	get_tree().current_scene.add_child(proj)
+
+func _try_contact_damage() -> void:
+	if damage_cooldown > 0.0:
+		return
+	if not is_instance_valid(player_ref):
+		return
+	if global_position.distance_to(player_ref.global_position) < 20.0:
+		if player_ref.has_method("take_damage"):
+			player_ref.take_damage(contact_damage, self)
+			damage_cooldown = 1.0
 
 func take_damage(amount: int) -> void:
 	current_hp -= amount
