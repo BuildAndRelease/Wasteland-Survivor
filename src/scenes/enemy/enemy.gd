@@ -54,10 +54,10 @@ func _physics_process(delta: float) -> void:
 		velocity = dir * move_speed * speed_mult + knockback_velocity
 		move_and_slide()
 
-		# Contact damage
+		# Contact damage — pass self as source for Scrap Shield melee reflect
 		if damage_cooldown <= 0 and global_position.distance_to(player_ref.global_position) < 20.0:
 			if player_ref.has_method("take_damage"):
-				player_ref.take_damage(contact_damage)
+				player_ref.take_damage(contact_damage, self)
 				damage_cooldown = 1.0
 
 func take_damage(amount: int) -> void:

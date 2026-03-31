@@ -1,7 +1,7 @@
 class_name SkillManager
 extends Node
 ## Manages player skills: tracking levels, cooldowns, auto-triggering actives,
-## applying passives, and generating level-up choices.
+## applying passives, spawning combo effects, and generating level-up choices.
 ## Reference: design/gdd/game-design-document.md - Section 3: Skill System
 
 signal skill_activated(skill_id: String)
@@ -20,11 +20,22 @@ var _scene_cache: Dictionary = {}
 ## Reference to the player node (set by player.gd)
 var player_ref: CharacterBody2D = null
 
-## Preloaded skill scenes
+## Preloaded skill scenes — base skills
 var _fire_bomb_scene: PackedScene = null
 var _poison_gas_scene: PackedScene = null
 var _emp_pulse_scene: PackedScene = null
 var _spike_trap_scene: PackedScene = null
+var _rage_injection_scene: PackedScene = null
+var _iron_fist_scene: PackedScene = null
+
+## Preloaded skill scenes — combo skills
+var _firestorm_scene: PackedScene = null
+var _electromagnetic_fortress_scene: PackedScene = null
+var _death_trap_field_scene: PackedScene = null
+var _iron_fist_barrage_explosion_scene: PackedScene = null
+
+## Combo state tracking
+var _fortress_instance: Node2D = null
 
 
 func _ready() -> void:
@@ -32,6 +43,12 @@ func _ready() -> void:
 	_poison_gas_scene = preload("res://src/scenes/skills/poison_gas.tscn")
 	_emp_pulse_scene = preload("res://src/scenes/skills/emp_pulse.tscn")
 	_spike_trap_scene = preload("res://src/scenes/skills/spike_trap.tscn")
+	_rage_injection_scene = preload("res://src/scenes/skills/rage_injection.tscn")
+	_iron_fist_scene = preload("res://src/scenes/skills/iron_fist.tscn")
+	_firestorm_scene = preload("res://src/scenes/skills/firestorm.tscn")
+	_electromagnetic_fortress_scene = preload("res://src/scenes/skills/electromagnetic_fortress.tscn")
+	_death_trap_field_scene = preload("res://src/scenes/skills/death_trap_field.tscn")
+	_iron_fist_barrage_explosion_scene = preload("res://src/scenes/skills/iron_fist_barrage_explosion.tscn")
 
 
 func _process(delta: float) -> void:
@@ -41,10 +58,19 @@ func _process(delta: float) -> void:
 		return
 	_update_cooldowns(delta)
 	_update_passive_effects(delta)
+	_update_combo_effects(delta)
 
 
 ## Add or upgrade a skill. Returns the new level.
 func add_skill(skill_id: String) -> int:
+	# Handle combo skills — they are one-shot activations, not leveled
+	if SkillData.COMBO_SKILLS.has(skill_id):
+		if not active_combos.has(skill_id):
+			active_combos[skill_id] = true
+			_activate_combo(skill_id)
+			combo_unlocked.emit(skill_id)
+		return 1
+
 	var current_level: int = owned_skills.get(skill_id, 0)
 	if current_level >= SkillData.MAX_SKILL_LEVEL:
 		return current_level
@@ -56,11 +82,10 @@ func add_skill(skill_id: String) -> int:
 		_apply_passive(skill_id, new_level)
 		passive_updated.emit(skill_id, new_level)
 	elif SkillData.is_active(skill_id):
-		# Initialize cooldown if first time acquiring
 		if not cooldown_timers.has(skill_id):
 			cooldown_timers[skill_id] = 0.0
 
-	# Check for newly available combos
+	# Check for newly available combos (they'll appear in level-up choices)
 	_check_combos()
 	return new_level
 
@@ -86,11 +111,10 @@ func generate_level_up_choices(count: int) -> Array:
 		if not owned_skills.has(skill_id):
 			new_skills.append(skill_id)
 
-	# Check for available combos
+	# Check for available combos — these get priority slots
 	var available_combos: Array = SkillData.get_available_combos(owned_skills)
 	for combo_id: String in available_combos:
 		if not active_combos.has(combo_id):
-			# Combos get priority slot
 			var combo_data: Dictionary = SkillData.get_skill(combo_id)
 			choices.append({
 				"skill_id": combo_id,
@@ -104,7 +128,6 @@ func generate_level_up_choices(count: int) -> Array:
 	new_skills.shuffle()
 
 	# Fill remaining slots: alternate between upgrades and new
-	var remaining: int = count - choices.size()
 	var upgrade_idx: int = 0
 	var new_idx: int = 0
 	var pick_upgrade: bool = true
@@ -143,7 +166,7 @@ func generate_level_up_choices(count: int) -> Array:
 			})
 			upgrade_idx += 1
 		else:
-			break  # No more skills available
+			break
 		pick_upgrade = not pick_upgrade
 
 	return choices.slice(0, mini(count, choices.size()))
@@ -190,8 +213,6 @@ func _trigger_active_skill(skill_id: String) -> void:
 
 
 func _trigger_rust_bullet(level_data: Dictionary) -> void:
-	# Rust bullet is handled by player's attack system via modifiers
-	# Update player attack interval from skill data
 	if is_instance_valid(player_ref):
 		player_ref.attack_interval = level_data.attack_interval
 		player_ref.double_shot = level_data.get("double_shot", false)
@@ -200,7 +221,12 @@ func _trigger_rust_bullet(level_data: Dictionary) -> void:
 func _trigger_fire_bomb(level_data: Dictionary) -> void:
 	var nearest: Node2D = _find_nearest_enemy()
 	if not nearest:
-		cooldown_timers["fire_bomb"] = 0.5  # Retry soon
+		cooldown_timers["fire_bomb"] = 0.5
+		return
+
+	# Firestorm combo: burning fog replaces normal fire bomb
+	if active_combos.has("firestorm"):
+		_spawn_firestorm(nearest)
 		return
 
 	var bomb: Node2D = _fire_bomb_scene.instantiate()
@@ -217,6 +243,11 @@ func _trigger_poison_gas(level_data: Dictionary) -> void:
 	var nearest: Node2D = _find_nearest_enemy()
 	if not nearest:
 		cooldown_timers["poison_gas"] = 0.5
+		return
+
+	# Firestorm combo: burning fog replaces normal poison gas
+	if active_combos.has("firestorm"):
+		_spawn_firestorm(nearest)
 		return
 
 	var gas: Node2D = _poison_gas_scene.instantiate()
@@ -240,6 +271,12 @@ func _trigger_emp_pulse(level_data: Dictionary) -> void:
 
 func _trigger_spike_trap(level_data: Dictionary) -> void:
 	var count: int = level_data.trap_count
+
+	# Death Trap Field combo: auto-firing traps replace normal traps
+	if active_combos.has("death_trap_field"):
+		_spawn_death_trap(level_data)
+		return
+
 	for i: int in count:
 		var trap: Node2D = _spike_trap_scene.instantiate()
 		var offset := Vector2(randf_range(-40, 40), randf_range(-40, 40)) if i > 0 else Vector2.ZERO
@@ -255,17 +292,32 @@ func _trigger_spike_trap(level_data: Dictionary) -> void:
 func _trigger_rage_injection(level_data: Dictionary) -> void:
 	if is_instance_valid(player_ref):
 		player_ref.apply_rage(level_data.attack_speed_mult, level_data.duration, level_data.get("cc_immune", false))
+		# Spawn visual effect on player
+		var vfx: Node2D = _rage_injection_scene.instantiate()
+		vfx.duration = level_data.duration
+		player_ref.add_child(vfx)
 
 
 func _trigger_iron_fist(level_data: Dictionary) -> void:
 	if not is_instance_valid(player_ref):
 		return
-	# Find enemies in cone in front of player
-	var enemies := get_tree().get_nodes_in_group("enemies")
+
 	var player_dir: Vector2 = player_ref.velocity.normalized()
 	if player_dir.length() < 0.1:
 		player_dir = Vector2.RIGHT
 	var half_angle: float = deg_to_rad(level_data.cone_angle / 2.0)
+
+	# Spawn visual effect
+	var vfx: Node2D = _iron_fist_scene.instantiate()
+	vfx.global_position = player_ref.global_position
+	vfx.direction = player_dir
+	vfx.attack_range = level_data.range
+	vfx.cone_angle = level_data.cone_angle
+	get_tree().current_scene.add_child(vfx)
+
+	# Find enemies in cone in front of player
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var has_barrage: bool = active_combos.has("iron_fist_barrage")
 
 	for enemy: Node2D in enemies:
 		if not is_instance_valid(enemy):
@@ -283,6 +335,15 @@ func _trigger_iron_fist(level_data: Dictionary) -> void:
 			enemy.apply_knockback(to_enemy.normalized() * level_data.knockback)
 		if level_data.has("stun_duration") and enemy.has_method("apply_stun"):
 			enemy.apply_stun(level_data.stun_duration)
+
+		# Iron Fist Barrage combo: spawn explosion on each hit
+		if has_barrage:
+			var combo_effect: Dictionary = SkillData.COMBO_SKILLS["iron_fist_barrage"].effect
+			var explosion: Node2D = _iron_fist_barrage_explosion_scene.instantiate()
+			explosion.global_position = enemy.global_position
+			explosion.explosion_radius = combo_effect.explosion_radius
+			explosion.explosion_damage = combo_effect.explosion_damage
+			get_tree().current_scene.add_child(explosion)
 
 
 ## Apply passive skill effects to player.
@@ -318,13 +379,88 @@ func _update_passive_effects(delta: float) -> void:
 		player_ref.heal(heal_amount)
 
 
-## Check if any new combos are unlocked.
+## Update combo-specific effects each frame.
+func _update_combo_effects(_delta: float) -> void:
+	if not is_instance_valid(player_ref):
+		return
+
+	# Electromagnetic Fortress: keep shield following player
+	if active_combos.has("electromagnetic_fortress"):
+		if is_instance_valid(_fortress_instance):
+			_fortress_instance.global_position = player_ref.global_position
+
+	# Berserker Blood: scale attack bonus with missing HP
+	if active_combos.has("berserker_blood"):
+		var combo_effect: Dictionary = SkillData.COMBO_SKILLS["berserker_blood"].effect
+		var hp_ratio: float = float(player_ref.current_hp) / float(player_ref.max_hp)
+		var missing_hp_ratio: float = 1.0 - hp_ratio
+		player_ref.berserker_attack_bonus = missing_hp_ratio * combo_effect.max_attack_bonus
+		player_ref.berserker_lifesteal = combo_effect.lifesteal_percent
+
+
+## Activate a combo skill's persistent effect.
+func _activate_combo(combo_id: String) -> void:
+	match combo_id:
+		"firestorm":
+			pass  # Modifies fire_bomb and poison_gas triggers
+		"electromagnetic_fortress":
+			_spawn_fortress()
+		"death_trap_field":
+			pass  # Modifies spike_trap trigger
+		"berserker_blood":
+			pass  # Updated each frame in _update_combo_effects
+		"iron_fist_barrage":
+			pass  # Modifies iron_fist trigger
+
+
+## Spawn the electromagnetic fortress shield around player.
+func _spawn_fortress() -> void:
+	if not is_instance_valid(player_ref):
+		return
+	var combo_effect: Dictionary = SkillData.COMBO_SKILLS["electromagnetic_fortress"].effect
+	var fortress: Node2D = _electromagnetic_fortress_scene.instantiate()
+	fortress.global_position = player_ref.global_position
+	fortress.stun_duration = combo_effect.contact_stun
+	fortress.knockback_force = combo_effect.contact_knockback
+	fortress.duration = 999.0  # Permanent until game ends
+	get_tree().current_scene.add_child(fortress)
+	_fortress_instance = fortress
+
+
+## Spawn a firestorm (combo: fire bomb + poison gas).
+func _spawn_firestorm(target: Node2D) -> void:
+	var combo_effect: Dictionary = SkillData.COMBO_SKILLS["firestorm"].effect
+	var storm: Node2D = _firestorm_scene.instantiate()
+	storm.global_position = target.global_position
+	# Base poison gas Lv3: radius 70, damage 6 — doubled by combo multipliers
+	storm.radius = 70.0 * combo_effect.range_mult
+	storm.damage_per_tick = int(6 * combo_effect.damage_mult)
+	storm.duration = 8.0
+	storm.slow_amount = 0.5
+	get_tree().current_scene.add_child(storm)
+
+
+## Spawn death trap field (combo: spike trap + rust bullet).
+func _spawn_death_trap(level_data: Dictionary) -> void:
+	var combo_effect: Dictionary = SkillData.COMBO_SKILLS["death_trap_field"].effect
+	var count: int = level_data.trap_count
+	for i: int in count:
+		var trap: Node2D = _death_trap_field_scene.instantiate()
+		var offset := Vector2(randf_range(-40, 40), randf_range(-40, 40)) if i > 0 else Vector2.ZERO
+		trap.global_position = player_ref.global_position + offset
+		trap.damage = level_data.damage
+		trap.slow_amount = level_data.slow_amount
+		trap.slow_duration = level_data.slow_duration
+		trap.duration = 10.0
+		trap.fire_interval = combo_effect.trap_fire_interval
+		trap.bullet_damage = player_ref.attack_damage
+		get_tree().current_scene.add_child(trap)
+
+
+## Check if any new combos are unlocked (they appear in level-up choices).
 func _check_combos() -> void:
-	var available: Array = SkillData.get_available_combos(owned_skills)
-	for combo_id: String in available:
-		if not active_combos.has(combo_id):
-			active_combos[combo_id] = true
-			combo_unlocked.emit(combo_id)
+	# Combos are offered through the level-up panel, not auto-activated.
+	pass
 
 
 ## Find nearest enemy to player.
@@ -349,3 +485,7 @@ func reset() -> void:
 	owned_skills.clear()
 	active_combos.clear()
 	cooldown_timers.clear()
+	_fortress_instance = null
+	if is_instance_valid(player_ref):
+		player_ref.berserker_attack_bonus = 0.0
+		player_ref.berserker_lifesteal = 0.0

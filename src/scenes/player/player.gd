@@ -34,6 +34,10 @@ var rage_attack_mult: float = 1.0
 var rage_timer: float = 0.0
 var rage_cc_immune: bool = false
 
+# Berserker Blood combo modifiers (set by SkillManager)
+var berserker_attack_bonus: float = 0.0
+var berserker_lifesteal: float = 0.0
+
 # Heal accumulator for sub-integer regen
 var _heal_accumulator: float = 0.0
 
@@ -132,7 +136,11 @@ func _fire_projectile(target_pos: Vector2) -> void:
 	var proj := projectile_scene.instantiate()
 	proj.global_position = global_position
 	proj.direction = (target_pos - global_position).normalized()
-	proj.damage = attack_damage
+	var bonus_damage: int = int(attack_damage * berserker_attack_bonus)
+	proj.damage = attack_damage + bonus_damage
+	if berserker_lifesteal > 0.0:
+		proj.lifesteal_percent = berserker_lifesteal
+		proj.lifesteal_target = self
 	get_tree().current_scene.add_child(proj)
 
 func _collect_xp_gems() -> void:
@@ -145,12 +153,17 @@ func _collect_xp_gems() -> void:
 			GameManager.add_xp(gem.xp_value)
 			gem.collect()
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, source: Node2D = null) -> void:
 	if is_dodging:
 		return
 	var actual := int(amount * (1.0 - damage_reduction))
 	current_hp -= actual
 	health_changed.emit(current_hp, max_hp)
+
+	# Scrap Shield Lv3: reflect melee damage back to attacker
+	if reflect_melee and source and source.has_method("take_damage"):
+		source.take_damage(int(actual * 0.5))
+
 	if current_hp <= 0:
 		current_hp = 0
 		died.emit()
