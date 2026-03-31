@@ -115,10 +115,12 @@ func _apply_character_stats() -> void:
 	player.move_speed = mods.get("move_speed", player.move_speed)
 	player.attack_damage = mods.get("attack_damage", player.attack_damage)
 	player.xp_pickup_range = mods.get("xp_pickup_range", player.xp_pickup_range)
-	# Update the player sprite color to match character
-	var sprite: ColorRect = player.get_node_or_null("Sprite")
+	# Update the player sprite texture to match character
+	var sprite: Sprite2D = player.get_node_or_null("Sprite")
 	if sprite:
-		sprite.color = char_data.get("color", Color(0.2, 0.7, 0.3, 1))
+		var tex_path: String = "res://assets/sprites/player/%s.png" % SaveManager.selected_character
+		if ResourceLoader.exists(tex_path):
+			sprite.texture = load(tex_path)
 	# Re-initialize HP after changing max
 	player.current_hp = player.max_hp
 	player.health_changed.emit(player.current_hp, player.max_hp)

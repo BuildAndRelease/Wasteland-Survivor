@@ -79,39 +79,15 @@ func _ready() -> void:
 
 func _build_visual(data: Dictionary) -> void:
 	var esize: Vector2 = data.get("size", Vector2(64, 64))
-	var ecolor: Color = data.get("color", Color(0.4, 0.1, 0.1, 1.0))
 
-	# Main body
-	var sprite := ColorRect.new()
+	# Use pixel art sprite
+	var sprite := Sprite2D.new()
 	sprite.name = "Sprite"
-	sprite.color = ecolor
-	sprite.offset_left = -esize.x / 2.0
-	sprite.offset_top = -esize.y / 2.0
-	sprite.offset_right = esize.x / 2.0
-	sprite.offset_bottom = esize.y / 2.0
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var tex_path: String = "res://assets/sprites/enemies/boss_ash_behemoth.png"
+	if ResourceLoader.exists(tex_path):
+		sprite.texture = load(tex_path)
 	add_child(sprite)
-
-	# Dark inner square for visual interest
-	var inner := ColorRect.new()
-	inner.name = "InnerSprite"
-	inner.color = Color(0.2, 0.05, 0.05, 1.0)
-	var inner_size: float = esize.x * 0.5
-	inner.offset_left = -inner_size / 2.0
-	inner.offset_top = -inner_size / 2.0
-	inner.offset_right = inner_size / 2.0
-	inner.offset_bottom = inner_size / 2.0
-	add_child(inner)
-
-	# Eyes (two bright dots)
-	for i in range(2):
-		var eye := ColorRect.new()
-		eye.color = Color(1.0, 0.3, 0.0, 1.0)
-		var eye_x: float = -8.0 + i * 16.0
-		eye.offset_left = eye_x - 3.0
-		eye.offset_top = -8.0
-		eye.offset_right = eye_x + 3.0
-		eye.offset_bottom = -2.0
-		add_child(eye)
 
 	# Collision shape
 	var col_shape := CollisionShape2D.new()

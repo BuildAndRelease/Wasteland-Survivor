@@ -66,15 +66,15 @@ func configure(type_data: Dictionary) -> void:
 	current_hp = max_hp
 
 	# Visual setup
-	var sprite: ColorRect = $Sprite
+	var sprite: Sprite2D = $Sprite
 	var col_shape: CollisionShape2D = $CollisionShape2D
 	var esize: Vector2 = type_data.get("size", Vector2(20, 20))
-	var ecolor: Color = type_data.get("color", Color(0.8, 0.2, 0.2, 1.0))
-	sprite.color = ecolor
-	sprite.offset_left = -esize.x / 2.0
-	sprite.offset_top = -esize.y / 2.0
-	sprite.offset_right = esize.x / 2.0
-	sprite.offset_bottom = esize.y / 2.0
+
+	# Load pixel art texture
+	var enemy_id: String = type_data.get("id", "walker")
+	var tex_path: String = "res://assets/sprites/enemies/%s.png" % enemy_id
+	if ResourceLoader.exists(tex_path):
+		sprite.texture = load(tex_path)
 	var shape := RectangleShape2D.new()
 	shape.size = esize
 	col_shape.shape = shape
