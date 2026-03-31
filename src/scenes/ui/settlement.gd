@@ -32,15 +32,17 @@ func _set_panel_visible(show: bool) -> void:
 func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_defeated: bool, bonus_coins: int = 0) -> void:
 	var mins: int = int(survived_time) / 60
 	var secs: int = int(survived_time) % 60
-	time_label.text = "Survival Time: %d:%02d" % [mins, secs]
-	kills_label.text = "Enemies Killed: %d" % kills
-	level_label.text = "Level Reached: %d" % level
-	wave_label.text = "Wave Reached: %d / 5" % wave
+	time_label.text = Locale.t("survival_time") % [mins, secs]
+	kills_label.text = Locale.t("enemies_killed") % kills
+	level_label.text = Locale.t("level_reached") % level
+	wave_label.text = Locale.t("wave_reached") % wave
 
 	if boss_defeated:
-		title_label.text = "VICTORY!"
+		title_label.text = Locale.t("victory")
 	else:
-		title_label.text = "GAME OVER"
+		title_label.text = Locale.t("game_over")
+
+	return_button.text = Locale.t("return_to_camp")
 
 	# Calculate and award scrap coins
 	_scrap_earned = CampData.calculate_scrap_coins(wave, kills, boss_defeated) + bonus_coins
@@ -48,7 +50,7 @@ func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_de
 
 	# Animate coin counter from 0 to earned amount
 	_coin_display = 0
-	coins_label.text = "Scrap Coins Earned: +0"
+	coins_label.text = Locale.t("coins_earned") % 0
 	_set_panel_visible(true)
 
 	# Fade in stats (modulate children since CanvasLayer has no modulate)
@@ -67,7 +69,7 @@ func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_de
 
 func _start_coin_count() -> void:
 	if _scrap_earned <= 0:
-		coins_label.text = "Scrap Coins Earned: +0"
+		coins_label.text = Locale.t("coins_earned") % 0
 		return
 	_coin_counting = true
 	var duration: float = clampf(float(_scrap_earned) / 200.0, 0.5, 2.0)
@@ -79,7 +81,7 @@ func _start_coin_count() -> void:
 func _update_coin_display(value: int) -> void:
 	if value != _coin_display:
 		_coin_display = value
-		coins_label.text = "Scrap Coins Earned: +%d" % _coin_display
+		coins_label.text = Locale.t("coins_earned") % _coin_display
 		# Play coin tick SFX at intervals
 		if _coin_display % maxi(int(_scrap_earned / 10.0), 1) == 0:
 			AudioManager.play_sfx("coin_earned", -8.0)
@@ -87,7 +89,7 @@ func _update_coin_display(value: int) -> void:
 
 func _on_coin_count_done() -> void:
 	_coin_counting = false
-	coins_label.text = "Scrap Coins Earned: +%d" % _scrap_earned
+	coins_label.text = Locale.t("coins_earned") % _scrap_earned
 	AudioManager.play_sfx("coin_earned")
 	# Pop effect on final number
 	var tween := create_tween()

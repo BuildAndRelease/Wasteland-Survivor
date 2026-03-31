@@ -57,7 +57,7 @@ func _process(delta: float) -> void:
 	var secs: int = total_sec % 60
 	timer_label.text = "%d:%02d" % [mins, secs]
 	# Update kills
-	kill_label.text = "Kills: %d" % GameManager.enemies_killed
+	kill_label.text = Locale.t("kills_format") % GameManager.enemies_killed
 	# Update boss HP bar
 	_update_boss_hp(delta)
 
@@ -77,10 +77,13 @@ func _on_level_up(level: int) -> void:
 	tween.tween_property(level_label, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BOUNCE)
 
 func _update_wave(wave: int) -> void:
-	wave_label.text = "Wave %d/5" % wave
+	wave_label.text = Locale.t("wave_format") % wave
 
 func _update_level(level: int) -> void:
-	level_label.text = "Lv.%d" % level
+	if level >= BalanceConfig.PLAYER_MAX_LEVEL:
+		level_label.text = Locale.t("level_max_format") % level
+	else:
+		level_label.text = Locale.t("level_format") % level
 
 # --- Wave Announcement ---
 
@@ -110,10 +113,10 @@ func _show_wave_announcement(wave: int) -> void:
 	var text: String
 	var color := Color(1.0, 0.8, 0.2, 1.0)
 	if wave == 5:
-		text = "FINAL WAVE — BOSS INCOMING!"
+		text = Locale.t("final_wave")
 		color = Color(1.0, 0.2, 0.1, 1.0)
 	else:
-		text = "— WAVE %d —" % wave
+		text = Locale.t("wave_announce") % wave
 	_wave_announce_label.text = text
 	_wave_announce_label.add_theme_color_override("font_color", color)
 	# Scale up + fade in, hold, scale down + fade out
@@ -146,7 +149,7 @@ func _build_boss_hp_bar() -> void:
 
 	_boss_name_label = Label.new()
 	_boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boss_name_label.text = "Ash Behemoth"
+	_boss_name_label.text = Locale.t("boss_name")
 	_boss_name_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.1, 1.0))
 	_boss_name_label.add_theme_font_size_override("font_size", 18)
 	_boss_hp_container.add_child(_boss_name_label)
@@ -185,7 +188,7 @@ func _on_boss_died() -> void:
 	fade_tween.tween_property(_boss_hp_container, "modulate:a", 0.0, 0.3)
 	fade_tween.tween_callback(func(): _boss_hp_container.visible = false)
 	# Show victory text
-	_wave_announce_label.text = "BOSS DEFEATED!"
+	_wave_announce_label.text = Locale.t("boss_defeated")
 	_wave_announce_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2, 1.0))
 	_wave_announce_label.scale = Vector2(0.5, 0.5)
 	var tween := create_tween()

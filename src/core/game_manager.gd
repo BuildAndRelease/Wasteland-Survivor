@@ -30,12 +30,17 @@ func xp_to_next_level() -> int:
 func add_xp(amount: int) -> void:
 	if current_state != State.GAMEPLAY:
 		return
+	if player_level >= BalanceConfig.PLAYER_MAX_LEVEL:
+		return
 	player_xp += amount
-	while player_xp >= xp_to_next_level():
+	while player_xp >= xp_to_next_level() and player_level < BalanceConfig.PLAYER_MAX_LEVEL:
 		player_xp -= xp_to_next_level()
 		player_level += 1
 		player_leveled_up.emit(player_level)
 		set_state(State.LEVEL_UP)
+	# Clamp xp if at max level
+	if player_level >= BalanceConfig.PLAYER_MAX_LEVEL:
+		player_xp = 0
 
 func set_state(new_state: State) -> void:
 	current_state = new_state

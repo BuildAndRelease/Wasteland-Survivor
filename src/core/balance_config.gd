@@ -18,6 +18,7 @@ const PLAYER_DODGE_COOLDOWN: float = 2.0
 ## XP required = XP_BASE + (level - 1) * XP_PER_LEVEL
 const XP_BASE: int = 20
 const XP_PER_LEVEL: int = 15
+const PLAYER_MAX_LEVEL: int = 30
 
 # --- Wave Timing ---
 const WAVE_DURATION: float = 180.0  # 3 min per wave
@@ -28,7 +29,7 @@ const MAX_WAVES: int = 5
 const WAVE_HP_MULTS: Array[float] = [1.0, 1.2, 1.4, 1.6, 1.8]
 const WAVE_SPEED_MULTS: Array[float] = [1.0, 1.1, 1.15, 1.2, 1.25]
 const WAVE_DAMAGE_MULTS: Array[float] = [1.0, 1.1, 1.2, 1.3, 1.4]
-const WAVE_SPAWN_INTERVALS: Array[float] = [1.5, 1.2, 1.0, 0.5, 0.4]
+const WAVE_SPAWN_INTERVALS: Array[float] = [0.8, 0.6, 0.5, 0.25, 0.2]
 
 # --- Scrap Coin Rewards ---
 const SCRAP_PER_WAVE: int = 20

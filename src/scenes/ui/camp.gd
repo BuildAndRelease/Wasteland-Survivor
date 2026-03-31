@@ -25,6 +25,8 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	menu_button.pressed.connect(_on_menu_pressed)
 	SaveManager.data_changed.connect(_on_data_changed)
+	start_button.text = Locale.t("start_game")
+	menu_button.text = Locale.t("back_to_menu")
 
 
 func _build_character_buttons() -> void:
@@ -40,9 +42,11 @@ func _build_character_buttons() -> void:
 
 		var unlocked: bool = SaveManager.is_character_unlocked(char_id)
 		if unlocked:
-			btn.text = "%s\n%s" % [data.get("name", ""), data.get("name_cn", "")]
+			var display_name: String = data.get("name_cn", "") if Locale.is_zh() else data.get("name", "")
+			btn.text = display_name
 		else:
-			btn.text = "%s\n%s\n[LOCKED: %d coins]" % [data.get("name", ""), data.get("name_cn", ""), data.get("cost", 0)]
+			var display_name: String = data.get("name_cn", "") if Locale.is_zh() else data.get("name", "")
+			btn.text = "%s\n%s" % [display_name, Locale.t("locked") % data.get("cost", 0)]
 
 		# Apply character color as modulate hint
 		var style := StyleBoxFlat.new()
@@ -102,10 +106,11 @@ func _build_upgrade_buttons() -> void:
 func _format_upgrade_text(upgrade_id: String, data: Dictionary) -> String:
 	var current_level: int = SaveManager.get_upgrade_level(upgrade_id)
 	var max_level: int = data.get("max_level", 0)
-	var name_str: String = "%s (%s)" % [data.get("name", ""), data.get("name_cn", "")]
+	var name_key: String = "upgrade_%s" % upgrade_id.replace("_boost", "")
+	var name_str: String = Locale.t(name_key) if Locale.t(name_key) != name_key else data.get("name", "")
 
 	if current_level >= max_level:
-		return "%s  Lv.%d/%d  MAX" % [name_str, current_level, max_level]
+		return "%s  Lv.%d/%d  %s" % [name_str, current_level, max_level, Locale.t("upgrade_max")]
 
 	var effect_desc: String = ""
 	var levels: Array = data.get("levels", [])
@@ -115,7 +120,7 @@ func _format_upgrade_text(upgrade_id: String, data: Dictionary) -> String:
 
 
 func _update_coins_display() -> void:
-	coins_label.text = "Scrap Coins: %d" % SaveManager.scrap_coins
+	coins_label.text = Locale.t("scrap_coins") % SaveManager.scrap_coins
 
 
 func _update_character_selection() -> void:
@@ -143,7 +148,10 @@ func _update_character_selection() -> void:
 
 	# Update info label
 	var sel_data: Dictionary = CampData.get_character(_selected_character)
-	char_info_label.text = "%s — %s" % [sel_data.get("name", ""), sel_data.get("description", "")]
+	var char_name: String = sel_data.get("name_cn", "") if Locale.is_zh() else sel_data.get("name", "")
+	var char_desc_key: String = "char_%s_desc" % _selected_character
+	var char_desc: String = Locale.t(char_desc_key)
+	char_info_label.text = "%s — %s" % [char_name, char_desc]
 
 
 func _update_upgrade_display() -> void:
@@ -159,11 +167,11 @@ func _update_upgrade_display() -> void:
 		label.text = _format_upgrade_text(upgrade_id, data)
 
 		if current_level >= max_level:
-			btn.text = "MAX"
+			btn.text = Locale.t("upgrade_max")
 			btn.disabled = true
 		else:
 			var cost: int = CampData.get_next_upgrade_cost(upgrade_id, current_level)
-			btn.text = "Upgrade (%d)" % cost
+			btn.text = Locale.t("upgrade_btn") % cost
 			btn.disabled = SaveManager.scrap_coins < cost
 
 

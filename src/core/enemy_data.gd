@@ -14,7 +14,7 @@ const ENEMY_TYPES: Dictionary = {
 		"max_hp": 30,
 		"move_speed": 80.0,
 		"contact_damage": 10,
-		"xp_drop": 5,
+		"xp_drop": 2,
 		"color": Color(0.8, 0.2, 0.2, 1.0),    # Red
 		"size": Vector2(20, 20),
 		"behavior": "chase",
@@ -26,7 +26,7 @@ const ENEMY_TYPES: Dictionary = {
 		"max_hp": 20,
 		"move_speed": 160.0,
 		"contact_damage": 15,
-		"xp_drop": 8,
+		"xp_drop": 4,
 		"color": Color(0.9, 0.6, 0.1, 1.0),    # Orange
 		"size": Vector2(18, 14),
 		"behavior": "chase",
@@ -38,7 +38,7 @@ const ENEMY_TYPES: Dictionary = {
 		"max_hp": 25,
 		"move_speed": 100.0,
 		"contact_damage": 8,
-		"xp_drop": 10,
+		"xp_drop": 5,
 		"color": Color(0.3, 0.9, 0.1, 1.0),    # Green
 		"size": Vector2(16, 16),
 		"behavior": "ranged",
@@ -54,7 +54,7 @@ const ENEMY_TYPES: Dictionary = {
 		"max_hp": 120,
 		"move_speed": 45.0,
 		"contact_damage": 25,
-		"xp_drop": 20,
+		"xp_drop": 10,
 		"color": Color(0.5, 0.5, 0.6, 1.0),    # Steel grey
 		"size": Vector2(32, 32),
 		"behavior": "chase",
@@ -66,7 +66,7 @@ const ENEMY_TYPES: Dictionary = {
 		"max_hp": 15,
 		"move_speed": 140.0,
 		"contact_damage": 5,
-		"xp_drop": 12,
+		"xp_drop": 6,
 		"color": Color(1.0, 0.3, 0.0, 1.0),    # Bright orange-red
 		"size": Vector2(14, 14),
 		"behavior": "explode",
