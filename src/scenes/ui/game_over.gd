@@ -1,0 +1,29 @@
+extends CanvasLayer
+## Game over panel: shows final stats with restart and menu buttons.
+
+@onready var time_label: Label = $Content/TimeLabel
+@onready var kills_label: Label = $Content/KillsLabel
+@onready var level_label: Label = $Content/LevelLabel
+
+
+func _ready() -> void:
+	visible = false
+
+
+func show_panel(survived_time: float, kills: int, level: int) -> void:
+	var mins: int = int(survived_time) / 60
+	var secs: int = int(survived_time) % 60
+	time_label.text = "Survived: %d:%02d" % [mins, secs]
+	kills_label.text = "Enemies Killed: %d" % kills
+	level_label.text = "Level Reached: %d" % level
+	visible = true
+
+
+func _on_restart_pressed() -> void:
+	visible = false
+	GameManager.start_game()
+
+
+func _on_menu_pressed() -> void:
+	visible = false
+	GameManager.go_to_menu()
