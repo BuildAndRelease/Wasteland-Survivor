@@ -45,7 +45,7 @@ func show_panel(survived_time: float, kills: int, level: int, wave: int, boss_de
 	return_button.text = Locale.t("return_to_camp")
 
 	# Calculate and award scrap coins
-	_scrap_earned = CampData.calculate_scrap_coins(wave, kills, boss_defeated) + bonus_coins
+	_scrap_earned = CampData.calculate_scrap_coins(wave, kills, boss_defeated) + bonus_coins + GameManager.run_coins
 	SaveManager.add_scrap_coins(_scrap_earned)
 
 	# Animate coin counter from 0 to earned amount

@@ -16,6 +16,7 @@ var current_wave: int = 1
 var elapsed_time: float = 0.0
 var enemies_killed: int = 0
 var is_game_active: bool = false
+var run_coins: int = 0
 
 ## Whether boss was defeated this run (used by settlement screen).
 var boss_defeated: bool = false
@@ -89,6 +90,7 @@ func reset_stats() -> void:
 	enemies_killed = 0
 	is_game_active = false
 	boss_defeated = false
+	run_coins = 0
 
 func trigger_game_over() -> void:
 	set_state(State.GAME_OVER)

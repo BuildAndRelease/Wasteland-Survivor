@@ -43,12 +43,18 @@ var dot_effects: Array = []
 
 var xp_gem_scene: PackedScene
 var _acid_projectile_scene: PackedScene
+var _coin_drop_script: GDScript
+var _xp_magnet_script: GDScript
+var _health_pack_script: GDScript
 
 func _ready() -> void:
 	current_hp = max_hp
 	add_to_group("enemies")
 	xp_gem_scene = preload("res://src/scenes/xp_gem/xp_gem.tscn")
 	_acid_projectile_scene = preload("res://src/scenes/enemy/acid_projectile.tscn")
+	_coin_drop_script = preload("res://src/scenes/drops/coin_drop.gd")
+	_xp_magnet_script = preload("res://src/scenes/drops/xp_magnet.gd")
+	_health_pack_script = preload("res://src/scenes/drops/health_pack.gd")
 	# Find player
 	await get_tree().process_frame
 	var players := get_tree().get_nodes_in_group("player")
@@ -196,6 +202,7 @@ func _explode() -> void:
 	gem.global_position = global_position
 	gem.xp_value = xp_drop
 	get_tree().current_scene.add_child(gem)
+	_try_drop_items()
 	queue_free()
 
 func _fire_acid_projectile() -> void:
@@ -309,4 +316,27 @@ func _die() -> void:
 	gem.global_position = global_position
 	gem.xp_value = xp_drop
 	get_tree().current_scene.add_child(gem)
+	_try_drop_items()
 	queue_free()
+
+## Roll random drops and spawn them at enemy position.
+func _try_drop_items() -> void:
+	var scene_root := get_tree().current_scene
+	if not scene_root:
+		return
+	var pos := global_position
+	if randf() < BalanceConfig.COIN_DROP_RATE:
+		var drop := Area2D.new()
+		drop.set_script(_coin_drop_script)
+		drop.global_position = pos
+		scene_root.add_child(drop)
+	if randf() < BalanceConfig.XP_MAGNET_DROP_RATE:
+		var drop := Area2D.new()
+		drop.set_script(_xp_magnet_script)
+		drop.global_position = pos + Vector2(8, 0)
+		scene_root.add_child(drop)
+	if randf() < BalanceConfig.HEALTH_PACK_DROP_RATE:
+		var drop := Area2D.new()
+		drop.set_script(_health_pack_script)
+		drop.global_position = pos + Vector2(-8, 0)
+		scene_root.add_child(drop)

@@ -61,6 +61,7 @@ func _physics_process(delta: float) -> void:
 	_handle_attack(delta)
 	_handle_rage(delta)
 	_collect_xp_gems()
+	_collect_drops()
 	move_and_slide()
 
 func _handle_movement(delta: float) -> void:
@@ -155,6 +156,16 @@ func _collect_xp_gems() -> void:
 			GameManager.add_xp(gem.xp_value)
 			AudioManager.play_sfx("xp_pickup", -5.0)
 			gem.collect()
+
+func _collect_drops() -> void:
+	var drops := get_tree().get_nodes_in_group("drops")
+	var effective_range: float = xp_pickup_range * xp_range_mult
+	for drop in drops:
+		if not is_instance_valid(drop):
+			continue
+		if global_position.distance_to(drop.global_position) <= effective_range:
+			if drop.has_method("pickup"):
+				drop.pickup(self)
 
 func take_damage(amount: int, source: Node2D = null) -> void:
 	if is_dodging:

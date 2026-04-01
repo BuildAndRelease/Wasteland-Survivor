@@ -44,6 +44,13 @@ const SCRAP_VICTORY_BONUS: int = 100
 # --- Pickup ---
 const XP_GEM_MAGNET_BASE: float = 50.0
 
+# --- Monster Drops ---
+const COIN_DROP_RATE: float = 0.04
+const XP_MAGNET_DROP_RATE: float = 0.015
+const HEALTH_PACK_DROP_RATE: float = 0.025
+const COIN_DROP_VALUE: int = 10
+const HEALTH_PACK_HEAL_PERCENT: float = 0.25
+
 # --- Boss ---
 const BOSS_HP: int = 5000
 const BOSS_SPEED: float = 60.0
