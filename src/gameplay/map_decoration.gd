@@ -7,6 +7,8 @@ extends Node2D
 @export var chunk_size: float = 800.0           # Size of each decoration chunk
 @export var view_distance: float = 1200.0       # How far from player to generate
 @export var cleanup_distance: float = 2000.0    # How far before cleanup
+@export var obstacle_min_per_chunk: int = BalanceConfig.OBSTACLE_MIN_PER_CHUNK
+@export var obstacle_max_per_chunk: int = BalanceConfig.OBSTACLE_MAX_PER_CHUNK
 
 var player_ref: Node2D = null
 var _generated_chunks: Dictionary = {}  # Vector2i -> Node2D
@@ -45,6 +47,28 @@ const DECORATIONS: Array = [
 		"min_size": Vector2(15, 10),
 		"max_size": Vector2(40, 30),
 		"weight": 0.2,
+	},
+]
+
+## Obstacle types: large solid objects that block movement.
+const OBSTACLES: Array = [
+	{  # Ruined wall
+		"color": Color(0.45, 0.40, 0.35, 0.95),
+		"min_size": Vector2(60, 20),
+		"max_size": Vector2(120, 30),
+		"weight": 0.4,
+	},
+	{  # Wrecked car
+		"color": Color(0.35, 0.25, 0.20, 0.9),
+		"min_size": Vector2(50, 30),
+		"max_size": Vector2(80, 40),
+		"weight": 0.35,
+	},
+	{  # Large rock
+		"color": Color(0.38, 0.36, 0.33, 0.95),
+		"min_size": Vector2(30, 30),
+		"max_size": Vector2(55, 50),
+		"weight": 0.25,
 	},
 ]
 
@@ -117,10 +141,53 @@ func _generate_chunk(chunk_key: Vector2i) -> void:
 		rect.rotation = rng.randf_range(-0.3, 0.3)
 		chunk_node.add_child(rect)
 
+	# --- Spawn obstacles (StaticBody2D with collision) ---
+	var obstacle_count: int = rng.randi_range(obstacle_min_per_chunk, obstacle_max_per_chunk)
+	for i in range(obstacle_count):
+		var obs_type: Dictionary = _pick_obstacle(rng)
+		var w: float = rng.randf_range(obs_type.min_size.x, obs_type.max_size.x)
+		var h: float = rng.randf_range(obs_type.min_size.y, obs_type.max_size.y)
+		var pos := chunk_origin + Vector2(
+			rng.randf_range(w, chunk_size - w),
+			rng.randf_range(h, chunk_size - h)
+		)
+
+		var body := StaticBody2D.new()
+		body.position = pos
+
+		# Visual
+		var visual := ColorRect.new()
+		visual.color = obs_type.color
+		visual.size = Vector2(w, h)
+		visual.position = -Vector2(w, h) / 2.0
+		body.add_child(visual)
+
+		# Collision
+		var shape := CollisionShape2D.new()
+		var rect_shape := RectangleShape2D.new()
+		rect_shape.size = Vector2(w, h)
+		shape.shape = rect_shape
+		body.add_child(shape)
+
+		body.z_index = -5  # Above ground deco (-10) but below entities
+		chunk_node.add_child(body)
+
 	# Render behind everything (z_index = -10)
 	chunk_node.z_index = -10
 	add_child(chunk_node)
 	_generated_chunks[chunk_key] = chunk_node
+
+func _pick_obstacle(rng: RandomNumberGenerator) -> Dictionary:
+	var total_weight: float = 0.0
+	for obs in OBSTACLES:
+		total_weight += obs.weight
+	var roll: float = rng.randf() * total_weight
+	var cumulative: float = 0.0
+	for obs in OBSTACLES:
+		cumulative += obs.weight
+		if roll <= cumulative:
+			return obs
+	return OBSTACLES[-1]
 
 func _pick_decoration(rng: RandomNumberGenerator) -> Dictionary:
 	var total_weight: float = 0.0

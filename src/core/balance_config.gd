@@ -80,6 +80,10 @@ const FIRESTORM_DAMAGE_MULT: float = 2.0
 const BERSERKER_MAX_ATTACK_BONUS: float = 1.0
 const BERSERKER_LIFESTEAL_PERCENT: float = 0.1
 
+# --- Map Obstacles ---
+const OBSTACLE_MIN_PER_CHUNK: int = 2
+const OBSTACLE_MAX_PER_CHUNK: int = 5
+
 # --- Screen Shake ---
 const SHAKE_PLAYER_HIT_INTENSITY: float = 4.0
 const SHAKE_PLAYER_HIT_DURATION: float = 0.15
