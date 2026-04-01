@@ -19,7 +19,7 @@ func _ready() -> void:
 	_trap_area = $TrapArea
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	_lifetime += delta
 
 	if _lifetime >= duration:

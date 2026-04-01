@@ -1,6 +1,6 @@
 extends Node2D
 ## Death Trap Field (Combo: Spike Trap Lv3 + Rust Bullet Lv3):
-## Trap that auto-fires rust bullets at nearby enemies.
+## Trap that damages enemies on contact and auto-fires rust bullets at nearby enemies.
 
 var damage: int = 20
 var slow_amount: float = 0.5
@@ -11,25 +11,28 @@ var bullet_damage: int = 10
 
 var _lifetime: float = 0.0
 var _fire_timer: float = 0.0
-var _trap_area: Area2D = null
+var _trap_tick_timer: float = 0.0
+var _trap_tick_interval: float = 1.0  # damage enemies on trap once per second
 var _projectile_scene: PackedScene = null
 
 
 func _ready() -> void:
-	_trap_area = $TrapArea
 	_projectile_scene = preload("res://src/scenes/projectile/projectile.tscn")
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	_lifetime += delta
 	_fire_timer -= delta
+	_trap_tick_timer -= delta
 
 	if _fire_timer <= 0.0:
 		_fire_timer = fire_interval
 		_auto_fire()
 
-	# Check for enemies stepping on trap for initial hit
-	_check_trap_trigger()
+	# Periodic trap damage (not every frame!)
+	if _trap_tick_timer <= 0.0:
+		_trap_tick_timer = _trap_tick_interval
+		_check_trap_trigger()
 
 	# Visual pulse
 	var pulse: float = 0.6 + 0.2 * sin(_lifetime * 4.0)
@@ -40,16 +43,18 @@ func _process(delta: float) -> void:
 
 
 func _check_trap_trigger() -> void:
-	var bodies := _trap_area.get_overlapping_bodies()
-	for body: Node2D in bodies:
-		if not body.is_in_group("enemies"):
+	# Direct distance check for reliable detection
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var trap_radius: float = 30.0
+	for enemy: Node2D in enemies:
+		if not is_instance_valid(enemy):
 			continue
-		if body.has_method("take_damage"):
-			body.take_damage(damage)
-		if body.has_method("apply_slow"):
-			body.apply_slow(slow_amount, slow_duration)
-		# Only hit once per check
-		break
+		if global_position.distance_to(enemy.global_position) > trap_radius:
+			continue
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(damage)
+		if enemy.has_method("apply_slow"):
+			enemy.apply_slow(slow_amount, slow_duration)
 
 
 func _auto_fire() -> void:

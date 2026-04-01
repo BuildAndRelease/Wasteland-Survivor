@@ -26,7 +26,7 @@ func _ready() -> void:
 	$BurnVisual.scale = Vector2(radius / 16.0, radius / 16.0)
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not _arrived:
 		# Fly toward target
 		var dir := (target_position - global_position).normalized()

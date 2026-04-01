@@ -484,6 +484,7 @@ func _spawn_fortress() -> void:
 	fortress.global_position = player_ref.global_position
 	fortress.stun_duration = combo_effect.contact_stun
 	fortress.knockback_force = combo_effect.contact_knockback
+	fortress.contact_damage = 10  # base contact damage
 	fortress.duration = 999.0  # Permanent until game ends
 	get_tree().current_scene.add_child(fortress)
 	_fortress_instance = fortress

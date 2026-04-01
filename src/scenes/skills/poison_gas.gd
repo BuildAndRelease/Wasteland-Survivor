@@ -20,7 +20,7 @@ func _ready() -> void:
 	$GasVisual.scale = Vector2(radius / 16.0, radius / 16.0)
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	_lifetime += delta
 	_tick_timer -= delta
 
