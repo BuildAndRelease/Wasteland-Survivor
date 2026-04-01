@@ -266,22 +266,17 @@ func _trigger_rust_bullet(level_data: Dictionary) -> void:
 
 
 func _trigger_fire_bomb(level_data: Dictionary) -> void:
-	var nearest: Node2D = _find_nearest_enemy()
-	if not nearest:
-		cooldown_timers["fire_bomb"] = 0.5
-		return
-
-	AudioManager.play_sfx_at("exploder_boom", nearest.global_position, -3.0)
+	AudioManager.play_sfx_at("exploder_boom", player_ref.global_position, -3.0)
 	VfxManager.spawn_skill_flash(player_ref.global_position, Color(1.0, 0.4, 0.0))
 
 	# Firestorm combo: burning fog replaces normal fire bomb
 	if active_combos.has("firestorm"):
-		_spawn_firestorm(nearest)
+		_spawn_firestorm_at_player()
 		return
 
 	var bomb: Node2D = _fire_bomb_scene.instantiate()
 	bomb.global_position = player_ref.global_position
-	bomb.target_position = nearest.global_position
+	bomb.target_position = player_ref.global_position  # Detonate at player position
 	bomb.duration = level_data.duration
 	bomb.radius = level_data.radius
 	bomb.damage_per_tick = level_data.damage_per_tick
@@ -290,20 +285,15 @@ func _trigger_fire_bomb(level_data: Dictionary) -> void:
 
 
 func _trigger_poison_gas(level_data: Dictionary) -> void:
-	var nearest: Node2D = _find_nearest_enemy()
-	if not nearest:
-		cooldown_timers["poison_gas"] = 0.5
-		return
-
 	VfxManager.spawn_skill_flash(player_ref.global_position, Color(0.3, 0.8, 0.1))
 
 	# Firestorm combo: burning fog replaces normal poison gas
 	if active_combos.has("firestorm"):
-		_spawn_firestorm(nearest)
+		_spawn_firestorm_at_player()
 		return
 
 	var gas: Node2D = _poison_gas_scene.instantiate()
-	gas.global_position = nearest.global_position
+	gas.global_position = player_ref.global_position  # Center on player
 	gas.duration = level_data.duration
 	gas.radius = level_data.radius
 	gas.slow_amount = level_data.slow_amount
@@ -527,11 +517,11 @@ func _spawn_chainsaw_storm(level_data: Dictionary) -> void:
 	storm.position = Vector2.ZERO
 
 
-## Spawn a firestorm (combo: fire bomb + poison gas).
-func _spawn_firestorm(target: Node2D) -> void:
+## Spawn a firestorm (combo: fire bomb + poison gas) centered on player.
+func _spawn_firestorm_at_player() -> void:
 	var combo_effect: Dictionary = SkillData.COMBO_SKILLS["firestorm"].effect
 	var storm: Node2D = _firestorm_scene.instantiate()
-	storm.global_position = target.global_position
+	storm.global_position = player_ref.global_position
 	# Base poison gas Lv3: radius 70, damage 6 — doubled by combo multipliers
 	storm.radius = 70.0 * combo_effect.range_mult
 	storm.damage_per_tick = int(6 * combo_effect.damage_mult)

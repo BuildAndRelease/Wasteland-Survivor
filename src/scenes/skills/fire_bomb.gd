@@ -24,6 +24,12 @@ func _ready() -> void:
 	shape.radius = radius
 	# Scale visual to match radius
 	$BurnVisual.scale = Vector2(radius / 16.0, radius / 16.0)
+	# If target is at our position (centered on player), detonate immediately
+	if global_position.distance_to(target_position) < 10.0:
+		_arrived = true
+		_burn_area.monitoring = true
+		$BurnVisual.visible = true
+		$ProjectileVisual.visible = false
 
 
 func _physics_process(delta: float) -> void:
