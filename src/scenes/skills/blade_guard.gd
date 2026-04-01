@@ -11,7 +11,9 @@ var rotation_speed: float = 3.0  # radians per second
 var _lifetime: float = 0.0
 var _tick_timer: float = 0.0
 var _blade_areas: Array[Area2D] = []
-var _blade_visuals: Array[ColorRect] = []
+
+# Track which enemies each blade is currently overlapping for continuous damage
+var _overlapping_enemies: Dictionary = {}  # area -> Array[Node2D]
 
 const BLADE_COLOR := Color(0.6, 0.65, 0.7, 0.9)
 const BLADE_SIZE := Vector2(20, 8)
@@ -38,7 +40,6 @@ func _build_blades() -> void:
 		pivot.rotation = angle
 		pivot.add_child(visual)
 		add_child(pivot)
-		_blade_visuals.append(visual)
 
 		# Area2D for hit detection
 		var area := Area2D.new()
@@ -48,14 +49,32 @@ func _build_blades() -> void:
 		area.monitorable = false
 		var col := CollisionShape2D.new()
 		var shape := RectangleShape2D.new()
-		shape.size = BLADE_SIZE
+		shape.size = BLADE_SIZE * 2.0  # larger hitbox than visual
 		col.shape = shape
 		area.add_child(col)
 		pivot.add_child(area)
 		_blade_areas.append(area)
 
+		# Connect signals for reliable overlap detection
+		area.body_entered.connect(_on_blade_body_entered.bind(area))
+		area.body_exited.connect(_on_blade_body_exited.bind(area))
+		_overlapping_enemies[area] = []
 
-func _process(delta: float) -> void:
+
+func _on_blade_body_entered(body: Node2D, area: Area2D) -> void:
+	if body.is_in_group("enemies") and body not in _overlapping_enemies[area]:
+		_overlapping_enemies[area].append(body)
+		# Deal damage immediately on contact
+		if body.has_method("take_damage"):
+			body.take_damage(damage)
+
+
+func _on_blade_body_exited(body: Node2D, area: Area2D) -> void:
+	if area in _overlapping_enemies:
+		_overlapping_enemies[area].erase(body)
+
+
+func _physics_process(delta: float) -> void:
 	_lifetime += delta
 	if _lifetime >= duration:
 		queue_free()
@@ -64,11 +83,11 @@ func _process(delta: float) -> void:
 	# Rotate all blades around origin
 	rotation += rotation_speed * delta
 
-	# Damage tick
+	# Periodic damage tick for enemies that stay overlapping
 	_tick_timer -= delta
 	if _tick_timer <= 0.0:
 		_tick_timer = tick_interval
-		_deal_damage()
+		_deal_tick_damage()
 
 	# Fade out in last 0.5s
 	if _lifetime > duration - 0.5:
@@ -76,11 +95,17 @@ func _process(delta: float) -> void:
 		modulate.a = fade
 
 
-func _deal_damage() -> void:
+func _deal_tick_damage() -> void:
 	for area: Area2D in _blade_areas:
+		# Clean up invalid refs
+		var enemies: Array = _overlapping_enemies.get(area, [])
+		for enemy: Node2D in enemies:
+			if is_instance_valid(enemy) and enemy.has_method("take_damage"):
+				enemy.take_damage(damage)
+		# Also check get_overlapping_bodies as fallback
 		var bodies := area.get_overlapping_bodies()
 		for body: Node2D in bodies:
 			if not body.is_in_group("enemies"):
 				continue
-			if body.has_method("take_damage"):
+			if body not in enemies and body.has_method("take_damage"):
 				body.take_damage(damage)

@@ -6,6 +6,7 @@ signal game_state_changed(new_state: String)
 signal player_leveled_up(new_level: int)
 signal wave_changed(wave_number: int)
 signal game_over_triggered(survived_time: float)
+signal xp_changed(current_xp: int, xp_needed: int)
 
 enum State { MAIN_MENU, CAMP, GAMEPLAY, PAUSED, LEVEL_UP, GAME_OVER, SETTLEMENT }
 
@@ -34,11 +35,14 @@ func add_xp(amount: int) -> void:
 	if player_level >= BalanceConfig.PLAYER_MAX_LEVEL:
 		return
 	player_xp += amount
+	xp_changed.emit(player_xp, xp_to_next_level())
 	while player_xp >= xp_to_next_level() and player_level < BalanceConfig.PLAYER_MAX_LEVEL:
 		player_xp -= xp_to_next_level()
 		player_level += 1
 		player_leveled_up.emit(player_level)
 		set_state(State.LEVEL_UP)
+	# Emit final XP state after any level-ups
+	xp_changed.emit(player_xp, xp_to_next_level())
 	# Clamp xp if at max level
 	if player_level >= BalanceConfig.PLAYER_MAX_LEVEL:
 		player_xp = 0

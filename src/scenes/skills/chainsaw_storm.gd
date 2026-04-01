@@ -15,6 +15,9 @@ var _lifetime: float = 0.0
 var _tick_timer: float = 0.0
 var _blade_areas: Array[Area2D] = []
 
+# Track overlapping enemies for signal-based detection
+var _overlapping_enemies: Dictionary = {}  # area -> Array[Node2D]
+
 const SAW_COLOR := Color(0.8, 0.15, 0.1, 0.95)
 const SAW_SIZE := Vector2(30, 14)
 
@@ -49,14 +52,32 @@ func _build_chainsaws() -> void:
 		area.monitorable = false
 		var col := CollisionShape2D.new()
 		var shape := RectangleShape2D.new()
-		shape.size = SAW_SIZE
+		shape.size = SAW_SIZE * 2.0  # larger hitbox than visual
 		col.shape = shape
 		area.add_child(col)
 		pivot.add_child(area)
 		_blade_areas.append(area)
 
+		# Connect signals for reliable overlap detection
+		area.body_entered.connect(_on_saw_body_entered.bind(area))
+		area.body_exited.connect(_on_saw_body_exited.bind(area))
+		_overlapping_enemies[area] = []
 
-func _process(delta: float) -> void:
+
+func _on_saw_body_entered(body: Node2D, area: Area2D) -> void:
+	if body.is_in_group("enemies") and body not in _overlapping_enemies[area]:
+		_overlapping_enemies[area].append(body)
+		# Deal damage immediately on contact
+		if body.has_method("take_damage"):
+			body.take_damage(damage)
+
+
+func _on_saw_body_exited(body: Node2D, area: Area2D) -> void:
+	if area in _overlapping_enemies:
+		_overlapping_enemies[area].erase(body)
+
+
+func _physics_process(delta: float) -> void:
 	_lifetime += delta
 	if _lifetime >= duration:
 		queue_free()
@@ -82,22 +103,22 @@ func _process(delta: float) -> void:
 
 
 func _deal_damage_and_pull() -> void:
-	# Also pull enemies within a larger radius toward center
-	var pull_radius: float = orbit_radius + 60.0
-	var scene_root := get_tree().current_scene
-	if not scene_root:
-		return
-
-	# Damage from blade hits
+	# Damage from blade hits (signal-tracked + overlap fallback)
 	for area: Area2D in _blade_areas:
+		var enemies: Array = _overlapping_enemies.get(area, [])
+		for enemy: Node2D in enemies:
+			if is_instance_valid(enemy) and enemy.has_method("take_damage"):
+				enemy.take_damage(damage)
+		# Fallback: also check get_overlapping_bodies
 		var bodies := area.get_overlapping_bodies()
 		for body: Node2D in bodies:
 			if not body.is_in_group("enemies"):
 				continue
-			if body.has_method("take_damage"):
+			if body not in enemies and body.has_method("take_damage"):
 				body.take_damage(damage)
 
 	# Vacuum pull — attract enemies in range toward player
+	var pull_radius: float = orbit_radius + 60.0
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	for enemy: Node2D in enemies:
 		if not is_instance_valid(enemy):

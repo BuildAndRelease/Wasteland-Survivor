@@ -33,6 +33,7 @@ var _boss_hp_target: float = 100.0
 func _ready() -> void:
 	GameManager.wave_changed.connect(_on_wave_changed)
 	GameManager.player_leveled_up.connect(_on_level_up)
+	GameManager.xp_changed.connect(_on_xp_changed)
 	_update_wave(1)
 	_update_level(1)
 	_build_wave_announce()
@@ -46,30 +47,36 @@ func set_player(player: Node2D) -> void:
 	_on_health_changed(player_ref.current_hp, player_ref.max_hp)
 
 func _process(delta: float) -> void:
-	# Accumulate elapsed time here (HUD is ALWAYS processing, game_world may be paused)
-	if GameManager.is_game_active:
+	# Only accumulate time during active GAMEPLAY (not LEVEL_UP / PAUSED)
+	if GameManager.current_state == GameManager.State.GAMEPLAY:
 		GameManager.elapsed_time += delta
 
-	# Timer always updates display
+	# Timer display always refreshes
 	var total_sec: int = int(GameManager.elapsed_time)
 	var mins: int = total_sec / 60
 	var secs: int = total_sec % 60
 	timer_label.text = "%d:%02d" % [mins, secs]
 
-	if not GameManager.is_game_active:
+	# XP / HP / kills update whenever the game is running (including LEVEL_UP so bars stay current)
+	if not GameManager.is_game_active and GameManager.current_state != GameManager.State.LEVEL_UP:
 		return
+
 	# Animate HP bar smoothly toward target
 	hp_bar.max_value = _hp_max_target
 	hp_bar.value = lerpf(hp_bar.value, _hp_target, delta * 10.0)
 	# Update HP overlay text
-	_hp_text_label.text = "%d / %d" % [int(_hp_target), int(_hp_max_target)]
-	# Animate XP bar smoothly toward target
-	_xp_max_target = GameManager.xp_to_next_level()
-	_xp_target = GameManager.player_xp
-	xp_bar.max_value = _xp_max_target
-	xp_bar.value = lerpf(xp_bar.value, _xp_target, delta * 8.0)
+	if _hp_text_label:
+		_hp_text_label.text = "%d / %d" % [int(_hp_target), int(_hp_max_target)]
+
+	# Always read latest XP from GameManager
+	var cur_xp: int = GameManager.player_xp
+	var max_xp: int = GameManager.xp_to_next_level()
+	xp_bar.max_value = max_xp
+	xp_bar.value = lerpf(xp_bar.value, float(cur_xp), delta * 8.0)
 	# Update XP overlay text
-	_xp_text_label.text = "%d / %d" % [int(_xp_target), int(_xp_max_target)]
+	if _xp_text_label:
+		_xp_text_label.text = "%d / %d" % [cur_xp, max_xp]
+
 	# Update kills
 	kill_label.text = Locale.t("kills_format") % GameManager.enemies_killed
 	# Update boss HP bar
@@ -80,6 +87,12 @@ func _on_health_changed(current: int, max_val: int) -> void:
 	_hp_target = current
 	if _hp_text_label:
 		_hp_text_label.text = "%d / %d" % [current, max_val]
+
+func _on_xp_changed(current_xp: int, xp_needed: int) -> void:
+	xp_bar.max_value = xp_needed
+	xp_bar.value = current_xp
+	if _xp_text_label:
+		_xp_text_label.text = "%d / %d" % [current_xp, xp_needed]
 
 func _on_wave_changed(wave: int) -> void:
 	_update_wave(wave)
