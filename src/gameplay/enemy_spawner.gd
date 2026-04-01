@@ -34,7 +34,6 @@ func _process(delta: float) -> void:
 	if GameManager.current_state == GameManager.State.LEVEL_UP:
 		return
 
-	GameManager.elapsed_time += delta
 	wave_timer += delta
 	spawn_timer -= delta
 

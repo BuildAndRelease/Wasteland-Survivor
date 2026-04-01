@@ -41,6 +41,12 @@ func set_player(player: Node2D) -> void:
 	_on_health_changed(player_ref.current_hp, player_ref.max_hp)
 
 func _process(delta: float) -> void:
+	# Update timer before game-active check so it shows correct time during level-up
+	var total_sec: int = int(GameManager.elapsed_time)
+	var mins: int = total_sec / 60
+	var secs: int = total_sec % 60
+	timer_label.text = "%d:%02d" % [mins, secs]
+
 	if not GameManager.is_game_active:
 		return
 	# Animate HP bar smoothly toward target
@@ -51,11 +57,6 @@ func _process(delta: float) -> void:
 	_xp_target = GameManager.player_xp
 	xp_bar.max_value = _xp_max_target
 	xp_bar.value = lerpf(xp_bar.value, _xp_target, delta * 8.0)
-	# Update timer
-	var total_sec: int = int(GameManager.elapsed_time)
-	var mins: int = total_sec / 60
-	var secs: int = total_sec % 60
-	timer_label.text = "%d:%02d" % [mins, secs]
 	# Update kills
 	kill_label.text = Locale.t("kills_format") % GameManager.enemies_killed
 	# Update boss HP bar

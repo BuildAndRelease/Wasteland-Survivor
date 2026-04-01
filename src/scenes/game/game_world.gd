@@ -85,6 +85,10 @@ func _fade_out(callback: Callable) -> void:
 
 
 func _process(delta: float) -> void:
+	# Accumulate elapsed time globally (not tied to spawner)
+	if GameManager.is_game_active:
+		GameManager.elapsed_time += delta
+
 	if is_instance_valid(player):
 		camera.global_position = player.global_position
 		# Apply screen shake offset
