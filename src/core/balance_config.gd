@@ -73,12 +73,19 @@ const EMP_PULSE_COOLDOWN: float = 8.0
 const SPIKE_TRAP_COOLDOWN: float = 7.0
 const RAGE_INJECTION_COOLDOWN: float = 12.0
 const IRON_FIST_COOLDOWN: float = 4.0
+const BLADE_GUARD_COOLDOWN: float = 5.0
+const BLADE_GUARD_DAMAGE: int = 8
+const BLADE_GUARD_ORBIT_RADIUS: float = 80.0
+const BLADE_GUARD_DURATION: float = 5.0
+const BLADE_GUARD_TICK_INTERVAL: float = 0.5
 
 # --- Combo Multipliers ---
 const FIRESTORM_RANGE_MULT: float = 2.0
 const FIRESTORM_DAMAGE_MULT: float = 2.0
 const BERSERKER_MAX_ATTACK_BONUS: float = 1.0
 const BERSERKER_LIFESTEAL_PERCENT: float = 0.1
+const CHAINSAW_STORM_DAMAGE_MULT: float = 2.5
+const CHAINSAW_STORM_PULL_FORCE: float = 120.0
 
 # --- Map Obstacles ---
 const OBSTACLE_MIN_PER_CHUNK: int = 2

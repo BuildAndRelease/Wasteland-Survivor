@@ -159,9 +159,24 @@ const BASE_SKILLS: Dictionary = {
 			{"desc": "Add stun", "desc_cn": "附加眩晕效果", "damage": 30, "range": 80.0, "cone_angle": 60.0, "knockback": 200.0, "stun_duration": 1.0},
 		],
 	},
+	"blade_guard": {
+		"id": "blade_guard",
+		"name": "Blade Guard",
+		"name_cn": "旋刃护卫",
+		"type": SkillType.ACTIVE_AOE,
+		"description": "Spinning blades orbit you, shredding nearby enemies.",
+		"description_cn": "旋转刀刃环绕玩家，切割附近敌人。",
+		"icon_color": Color(0.6, 0.65, 0.7, 1),
+		"cooldown": BalanceConfig.BLADE_GUARD_COOLDOWN,
+		"levels": [
+			{"desc": "2 blades orbit", "desc_cn": "2把刀刃环绕", "blade_count": 2, "damage": BalanceConfig.BLADE_GUARD_DAMAGE, "orbit_radius": BalanceConfig.BLADE_GUARD_ORBIT_RADIUS, "duration": BalanceConfig.BLADE_GUARD_DURATION, "tick_interval": BalanceConfig.BLADE_GUARD_TICK_INTERVAL},
+			{"desc": "3 blades, dmg +50%", "desc_cn": "3把刀刃，伤害+50%", "blade_count": 3, "damage": int(BalanceConfig.BLADE_GUARD_DAMAGE * 1.5), "orbit_radius": BalanceConfig.BLADE_GUARD_ORBIT_RADIUS, "duration": BalanceConfig.BLADE_GUARD_DURATION, "tick_interval": BalanceConfig.BLADE_GUARD_TICK_INTERVAL},
+			{"desc": "4 blades, larger orbit", "desc_cn": "4把刀刃，更大范围", "blade_count": 4, "damage": int(BalanceConfig.BLADE_GUARD_DAMAGE * 1.5), "orbit_radius": 100.0, "duration": 8.0, "tick_interval": BalanceConfig.BLADE_GUARD_TICK_INTERVAL},
+		],
+	},
 }
 
-## 5 combo skills with prerequisite conditions.
+## 6 combo skills with prerequisite conditions.
 const COMBO_SKILLS: Dictionary = {
 	"firestorm": {
 		"id": "firestorm",
@@ -217,6 +232,17 @@ const COMBO_SKILLS: Dictionary = {
 		"icon_color": Color(1.0, 0.5, 0.0, 1),
 		"requirements": {"iron_fist": 3, "fire_bomb": 3},
 		"effect": {"punch_explode": true, "explosion_radius": 60.0, "explosion_damage": 15},
+	},
+	"chainsaw_storm": {
+		"id": "chainsaw_storm",
+		"name": "Chainsaw Storm",
+		"name_cn": "电锯风暴",
+		"type": SkillType.COMBO,
+		"description": "Blades become massive chainsaws that pull enemies in.",
+		"description_cn": "刀刃变为巨型电锯，将敌人吸向玩家。",
+		"icon_color": Color(0.8, 0.15, 0.1, 1),
+		"requirements": {"blade_guard": 3, "iron_fist": 3},
+		"effect": {"damage_mult": BalanceConfig.CHAINSAW_STORM_DAMAGE_MULT, "pull_force": BalanceConfig.CHAINSAW_STORM_PULL_FORCE},
 	},
 }
 

@@ -36,6 +36,10 @@ var _firestorm_scene: PackedScene = null
 var _electromagnetic_fortress_scene: PackedScene = null
 var _death_trap_field_scene: PackedScene = null
 var _iron_fist_barrage_explosion_scene: PackedScene = null
+var _chainsaw_storm_scene: PackedScene = null
+
+## Preloaded skill scenes — blade guard
+var _blade_guard_scene: PackedScene = null
 
 ## Combo state tracking
 var _fortress_instance: Node2D = null
@@ -52,6 +56,8 @@ func _ready() -> void:
 	_electromagnetic_fortress_scene = preload("res://src/scenes/skills/electromagnetic_fortress.tscn")
 	_death_trap_field_scene = preload("res://src/scenes/skills/death_trap_field.tscn")
 	_iron_fist_barrage_explosion_scene = preload("res://src/scenes/skills/iron_fist_barrage_explosion.tscn")
+	_blade_guard_scene = preload("res://src/scenes/skills/blade_guard.tscn")
+	_chainsaw_storm_scene = preload("res://src/scenes/skills/chainsaw_storm.tscn")
 
 
 func _process(delta: float) -> void:
@@ -247,6 +253,8 @@ func _trigger_active_skill(skill_id: String) -> void:
 			_trigger_rage_injection(level_data)
 		"iron_fist":
 			_trigger_iron_fist(level_data)
+		"blade_guard":
+			_trigger_blade_guard(level_data)
 
 	skill_activated.emit(skill_id)
 
@@ -463,6 +471,8 @@ func _activate_combo(combo_id: String) -> void:
 			pass  # Updated each frame in _update_combo_effects
 		"iron_fist_barrage":
 			pass  # Modifies iron_fist trigger
+		"chainsaw_storm":
+			pass  # Modifies blade_guard trigger
 
 
 ## Spawn the electromagnetic fortress shield around player.
@@ -477,6 +487,43 @@ func _spawn_fortress() -> void:
 	fortress.duration = 999.0  # Permanent until game ends
 	get_tree().current_scene.add_child(fortress)
 	_fortress_instance = fortress
+
+
+func _trigger_blade_guard(level_data: Dictionary) -> void:
+	if not is_instance_valid(player_ref):
+		return
+
+	VfxManager.spawn_skill_flash(player_ref.global_position, Color(0.6, 0.65, 0.7))
+
+	# Chainsaw Storm combo: massive chainsaws replace normal blades
+	if active_combos.has("chainsaw_storm"):
+		_spawn_chainsaw_storm(level_data)
+		return
+
+	var guard: Node2D = _blade_guard_scene.instantiate()
+	guard.global_position = player_ref.global_position
+	guard.blade_count = level_data.blade_count
+	guard.damage = level_data.damage
+	guard.orbit_radius = level_data.orbit_radius
+	guard.duration = level_data.duration
+	guard.tick_interval = level_data.tick_interval
+	get_tree().current_scene.add_child(guard)
+	# Follow player
+	guard.reparent(player_ref)
+	guard.position = Vector2.ZERO
+
+
+func _spawn_chainsaw_storm(level_data: Dictionary) -> void:
+	var combo_effect: Dictionary = SkillData.COMBO_SKILLS["chainsaw_storm"].effect
+	var storm: Node2D = _chainsaw_storm_scene.instantiate()
+	storm.global_position = player_ref.global_position
+	storm.damage = int(level_data.damage * combo_effect.damage_mult)
+	storm.pull_force = combo_effect.pull_force
+	storm.duration = 10.0
+	get_tree().current_scene.add_child(storm)
+	# Follow player
+	storm.reparent(player_ref)
+	storm.position = Vector2.ZERO
 
 
 ## Spawn a firestorm (combo: fire bomb + poison gas).
