@@ -18,6 +18,10 @@ var _hp_max_target: float = 100.0
 var _xp_target: float = 0.0
 var _xp_max_target: float = 20.0
 
+# Overlay labels for HP/XP bars
+var _hp_text_label: Label = null
+var _xp_text_label: Label = null
+
 # Wave announcement
 var _wave_announce_label: Label = null
 # Boss HP bar
@@ -33,6 +37,7 @@ func _ready() -> void:
 	_update_level(1)
 	_build_wave_announce()
 	_build_boss_hp_bar()
+	_build_bar_text_labels()
 
 func set_player(player: Node2D) -> void:
 	player_ref = player
@@ -41,7 +46,11 @@ func set_player(player: Node2D) -> void:
 	_on_health_changed(player_ref.current_hp, player_ref.max_hp)
 
 func _process(delta: float) -> void:
-	# Update timer before game-active check so it shows correct time during level-up
+	# Accumulate elapsed time here (HUD is ALWAYS processing, game_world may be paused)
+	if GameManager.is_game_active:
+		GameManager.elapsed_time += delta
+
+	# Timer always updates display
 	var total_sec: int = int(GameManager.elapsed_time)
 	var mins: int = total_sec / 60
 	var secs: int = total_sec % 60
@@ -52,11 +61,15 @@ func _process(delta: float) -> void:
 	# Animate HP bar smoothly toward target
 	hp_bar.max_value = _hp_max_target
 	hp_bar.value = lerpf(hp_bar.value, _hp_target, delta * 10.0)
+	# Update HP overlay text
+	_hp_text_label.text = "%d / %d" % [int(_hp_target), int(_hp_max_target)]
 	# Animate XP bar smoothly toward target
 	_xp_max_target = GameManager.xp_to_next_level()
 	_xp_target = GameManager.player_xp
 	xp_bar.max_value = _xp_max_target
 	xp_bar.value = lerpf(xp_bar.value, _xp_target, delta * 8.0)
+	# Update XP overlay text
+	_xp_text_label.text = "%d / %d" % [int(_xp_target), int(_xp_max_target)]
 	# Update kills
 	kill_label.text = Locale.t("kills_format") % GameManager.enemies_killed
 	# Update boss HP bar
@@ -65,6 +78,8 @@ func _process(delta: float) -> void:
 func _on_health_changed(current: int, max_val: int) -> void:
 	_hp_max_target = max_val
 	_hp_target = current
+	if _hp_text_label:
+		_hp_text_label.text = "%d / %d" % [current, max_val]
 
 func _on_wave_changed(wave: int) -> void:
 	_update_wave(wave)
@@ -85,6 +100,35 @@ func _update_level(level: int) -> void:
 		level_label.text = Locale.t("level_max_format") % level
 	else:
 		level_label.text = Locale.t("level_format") % level
+
+# --- Bar Text Labels (overlay on HP/XP bars) ---
+
+func _build_bar_text_labels() -> void:
+	# HP text label — centered on HP bar
+	_hp_text_label = Label.new()
+	_hp_text_label.name = "HPText"
+	_hp_text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hp_text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hp_text_label.text = "100 / 100"
+	_hp_text_label.add_theme_font_size_override("font_size", 12)
+	_hp_text_label.add_theme_color_override("font_color", Color.WHITE)
+	_hp_text_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_hp_text_label.add_theme_constant_override("outline_size", 2)
+	_hp_text_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hp_bar.add_child(_hp_text_label)
+
+	# XP text label — centered on XP bar
+	_xp_text_label = Label.new()
+	_xp_text_label.name = "XPText"
+	_xp_text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_xp_text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_xp_text_label.text = "0 / 20"
+	_xp_text_label.add_theme_font_size_override("font_size", 12)
+	_xp_text_label.add_theme_color_override("font_color", Color.WHITE)
+	_xp_text_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_xp_text_label.add_theme_constant_override("outline_size", 2)
+	_xp_text_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	xp_bar.add_child(_xp_text_label)
 
 # --- Wave Announcement ---
 
