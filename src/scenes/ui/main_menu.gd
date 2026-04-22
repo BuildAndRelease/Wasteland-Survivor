@@ -9,7 +9,8 @@ extends Control
 
 func _ready() -> void:
 	GameManager.set_state(GameManager.State.MAIN_MENU)
-	lang_button.pressed.connect(_on_lang_pressed)
+	if not lang_button.pressed.is_connected(_on_lang_pressed):
+		lang_button.pressed.connect(_on_lang_pressed)
 	_update_texts()
 
 

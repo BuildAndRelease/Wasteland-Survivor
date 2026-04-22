@@ -1,0 +1,27 @@
+{
+  "theme_id": "level2_frozen_wasteland",
+  "enemy_mapping": {
+    "walker": "assets/generated/level2_frozen_wasteland/enemies/frost_walker",
+    "mutant_dog": "assets/generated/level2_frozen_wasteland/enemies/snowfang_hound",
+    "acid_bug": "assets/generated/level2_frozen_wasteland/redraw_candidates/ice_spitter_v3_bugbeast",
+    "iron_giant": "assets/generated/level2_frozen_wasteland/enemies/glacier_brute",
+    "exploder": "assets/generated/level2_frozen_wasteland/redraw_candidates/frost_bomber_v2_unstable",
+    "boss_ash_behemoth": "assets/generated/level2_frozen_wasteland/redraw_candidates/blizzard_behemoth_v3_beast"
+  },
+  "selected_redraw_targets": {
+    "ice_spitter": "assets/generated/level2_frozen_wasteland/redraw_candidates/ice_spitter_v3_bugbeast",
+    "frost_bomber": "assets/generated/level2_frozen_wasteland/redraw_candidates/frost_bomber_v2_unstable",
+    "blizzard_behemoth": "assets/generated/level2_frozen_wasteland/redraw_candidates/blizzard_behemoth_v3_beast"
+  },
+  "object_mapping": {
+    "dead_tree": "assets/generated/level2_frozen_wasteland/objects/frozen_dead_tree.png",
+    "metal_debris": "assets/generated/level2_frozen_wasteland/objects/frozen_metal_debris.png",
+    "ruined_wall": "assets/generated/level2_frozen_wasteland/objects/ruined_wall_frost.png",
+    "wrecked_car": "assets/generated/level2_frozen_wasteland/objects/snow_covered_wrecked_car.png",
+    "large_rock": "assets/generated/level2_frozen_wasteland/objects/ice_boulder.png"
+  },
+  "notes": [
+    "walk sheets currently use single-frame directional fallback copies",
+    "game code falls back to default sprites when themed assets are missing"
+  ]
+}

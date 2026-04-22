@@ -93,7 +93,10 @@ func _build_visual(data: Dictionary) -> void:
 	var sprite := Sprite2D.new()
 	sprite.name = "Sprite"
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var tex_path: String = "res://assets/sprites/enemies/boss_ash_behemoth.png"
+	var tex_path: String = GameManager.get_themed_sprite_path(
+		"enemies/boss_ash_behemoth.png",
+		"res://assets/sprites/enemies/boss_ash_behemoth.png"
+	)
 	if ResourceLoader.exists(tex_path):
 		sprite.texture = load(tex_path)
 	add_child(sprite)
@@ -249,7 +252,10 @@ func _update_facing(dir: Vector2) -> void:
 ## Load walking spritesheets for each direction.
 func _load_walk_sheets() -> void:
 	for d in ["south", "east", "north", "west"]:
-		var tex_path := "res://assets/sprites/enemies/walk/boss_ash_behemoth_walk_%s.png" % d
+		var tex_path := GameManager.get_themed_sprite_path(
+			"enemies/walk/boss_ash_behemoth_walk_%s.png" % d,
+			"res://assets/sprites/enemies/walk/boss_ash_behemoth_walk_%s.png" % d
+		)
 		if ResourceLoader.exists(tex_path):
 			var tex: Texture2D = load(tex_path)
 			_walk_sheets[d] = tex
@@ -283,7 +289,10 @@ func _update_walk_animation() -> void:
 	else:
 		if _is_walk_playing:
 			_is_walk_playing = false
-			var tex_path := "res://assets/sprites/enemies/directions/boss_ash_behemoth_%s.png" % _facing_direction
+			var tex_path := GameManager.get_themed_sprite_path(
+				"enemies/directions/boss_ash_behemoth_%s.png" % _facing_direction,
+				"res://assets/sprites/enemies/directions/boss_ash_behemoth_%s.png" % _facing_direction
+			)
 			if ResourceLoader.exists(tex_path):
 				sprite.texture = load(tex_path)
 				sprite.hframes = 1

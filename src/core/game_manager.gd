@@ -18,6 +18,7 @@ var elapsed_time: float = 0.0
 var enemies_killed: int = 0
 var is_game_active: bool = false
 var run_coins: int = 0
+var current_theme_id: String = ""
 
 ## Whether boss was defeated this run (used by settlement screen).
 var boss_defeated: bool = false
@@ -86,6 +87,18 @@ func go_to_menu() -> void:
 	get_tree().change_scene_to_file("res://src/scenes/ui/main_menu.tscn")
 	set_state(State.MAIN_MENU)
 
+func set_theme(theme_id: String) -> void:
+	current_theme_id = theme_id.strip_edges()
+
+func get_themed_sprite_path(relative_path: String, fallback_path: String = "") -> String:
+	if current_theme_id != "":
+		var themed_path := "res://assets/sprites/themes/%s/%s" % [current_theme_id, relative_path]
+		if ResourceLoader.exists(themed_path):
+			return themed_path
+	if fallback_path != "":
+		return fallback_path
+	return "res://assets/sprites/%s" % relative_path
+
 func reset_stats() -> void:
 	player_level = 1
 	player_xp = 0
@@ -95,6 +108,7 @@ func reset_stats() -> void:
 	is_game_active = false
 	boss_defeated = false
 	run_coins = 0
+	current_theme_id = ""
 
 func trigger_game_over() -> void:
 	set_state(State.GAME_OVER)

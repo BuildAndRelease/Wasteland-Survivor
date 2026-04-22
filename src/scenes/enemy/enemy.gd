@@ -87,7 +87,10 @@ func configure(type_data: Dictionary) -> void:
 
 	# Load pixel art texture
 	enemy_id = type_data.get("id", "walker")
-	var tex_path: String = "res://assets/sprites/enemies/%s.png" % enemy_id
+	var tex_path: String = GameManager.get_themed_sprite_path(
+		"enemies/%s.png" % enemy_id,
+		"res://assets/sprites/enemies/%s.png" % enemy_id
+	)
 	if ResourceLoader.exists(tex_path):
 		sprite.texture = load(tex_path)
 	var shape := RectangleShape2D.new()
@@ -250,7 +253,10 @@ func _update_facing(dir: Vector2) -> void:
 ## Load walking spritesheet textures for each direction.
 func _load_walk_sheets() -> void:
 	for d in ["south", "east", "north", "west"]:
-		var tex_path := "res://assets/sprites/enemies/walk/%s_walk_%s.png" % [enemy_id, d]
+		var tex_path := GameManager.get_themed_sprite_path(
+			"enemies/walk/%s_walk_%s.png" % [enemy_id, d],
+			"res://assets/sprites/enemies/walk/%s_walk_%s.png" % [enemy_id, d]
+		)
 		if ResourceLoader.exists(tex_path):
 			var tex: Texture2D = load(tex_path)
 			_walk_sheets[d] = tex
@@ -284,7 +290,10 @@ func _update_walk_animation() -> void:
 	else:
 		if _is_walk_playing:
 			_is_walk_playing = false
-			var tex_path := "res://assets/sprites/enemies/directions/%s_%s.png" % [enemy_id, facing_direction]
+			var tex_path := GameManager.get_themed_sprite_path(
+				"enemies/directions/%s_%s.png" % [enemy_id, facing_direction],
+				"res://assets/sprites/enemies/directions/%s_%s.png" % [enemy_id, facing_direction]
+			)
 			if ResourceLoader.exists(tex_path):
 				sprite.texture = load(tex_path)
 				sprite.hframes = 1

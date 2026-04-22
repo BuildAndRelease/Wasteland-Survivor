@@ -11,6 +11,8 @@ extends Node2D
 @onready var camera: Camera2D = $Camera2D
 @onready var map_decoration: Node2D = $MapDecoration
 
+@export var theme_id: String = "level2_frozen_wasteland"
+
 var skill_manager: SkillManager = null
 
 # Screen shake state
@@ -22,6 +24,10 @@ var _fade_overlay: ColorRect = null
 
 
 func _ready() -> void:
+	GameManager.set_theme(theme_id)
+	if map_decoration.has_method("refresh_theme"):
+		map_decoration.refresh_theme()
+
 	# Build fade overlay for screen transitions
 	_build_fade_overlay()
 

@@ -101,6 +101,12 @@ const OBSTACLES: Array = [
 
 func _ready() -> void:
 	_init_noise()
+	refresh_theme()
+
+func refresh_theme() -> void:
+	_tile_textures.clear()
+	_decoration_textures.clear()
+	_obstacle_textures.clear()
 	_preload_textures()
 
 
@@ -113,7 +119,10 @@ func _init_noise() -> void:
 
 func _preload_textures() -> void:
 	for i in range(16):
-		var path := "res://assets/sprites/tileset/tile_%d.png" % i
+		var path := GameManager.get_themed_sprite_path(
+			"tileset/tile_%d.png" % i,
+			"res://assets/sprites/tileset/tile_%d.png" % i
+		)
 		if ResourceLoader.exists(path):
 			_tile_textures.append(load(path))
 		else:
@@ -121,13 +130,19 @@ func _preload_textures() -> void:
 
 	var deco_names := []
 	for dname in deco_names:
-		var path := "res://assets/sprites/objects/%s.png" % dname
+		var path := GameManager.get_themed_sprite_path(
+			"objects/%s.png" % dname,
+			"res://assets/sprites/objects/%s.png" % dname
+		)
 		if ResourceLoader.exists(path):
 			_decoration_textures[dname] = load(path)
 
 	var obs_names := ["dead_tree", "metal_debris", "ruined_wall", "wrecked_car", "large_rock"]
 	for oname in obs_names:
-		var path := "res://assets/sprites/objects/%s.png" % oname
+		var path := GameManager.get_themed_sprite_path(
+			"objects/%s.png" % oname,
+			"res://assets/sprites/objects/%s.png" % oname
+		)
 		if ResourceLoader.exists(path):
 			_obstacle_textures[oname] = load(path)
 
