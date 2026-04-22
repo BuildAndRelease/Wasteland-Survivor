@@ -120,7 +120,9 @@ func _apply_character_stats() -> void:
 	# Update the player sprite texture to match character
 	var sprite: Sprite2D = player.get_node_or_null("Sprite")
 	if sprite:
-		var tex_path: String = "res://assets/sprites/player/%s.png" % SaveManager.selected_character
+		var tex_path: String = "res://assets/sprites/player/directions/%s_south.png" % SaveManager.selected_character
+		if not ResourceLoader.exists(tex_path):
+			tex_path = "res://assets/sprites/player/%s.png" % SaveManager.selected_character
 		if ResourceLoader.exists(tex_path):
 			sprite.texture = load(tex_path)
 	# Re-initialize HP after changing max

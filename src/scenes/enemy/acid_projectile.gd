@@ -33,9 +33,9 @@ func _physics_process(delta: float) -> void:
 	position += direction * speed * delta
 	time_alive += delta
 	if time_alive >= lifetime:
-		queue_free()
+		call_deferred("queue_free")
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
 		body.take_damage(damage, null)
-	queue_free()
+	call_deferred("queue_free")

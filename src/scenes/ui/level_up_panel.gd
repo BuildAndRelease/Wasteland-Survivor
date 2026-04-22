@@ -5,6 +5,8 @@ extends CanvasLayer
 @onready var skill_btn_1: Button = $Content/SkillContainer/SkillButton1
 @onready var skill_btn_2: Button = $Content/SkillContainer/SkillButton2
 @onready var skill_btn_3: Button = $Content/SkillContainer/SkillButton3
+@onready var title_label: Label = $Content/TitleLabel
+@onready var choose_label: Label = $Content/ChooseLabel
 
 var skill_manager: SkillManager = null
 var current_choices: Array = []
@@ -31,6 +33,9 @@ func set_skill_manager(manager: SkillManager) -> void:
 func show_panel() -> void:
 	if skill_manager:
 		current_choices = skill_manager.generate_level_up_choices(3)
+	# Update localized static labels
+	title_label.text = Locale.t("level_up_title")
+	choose_label.text = Locale.t("level_up_choose")
 	_update_buttons()
 	_set_panel_visible(true)
 

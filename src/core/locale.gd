@@ -67,6 +67,8 @@ const _EN: Dictionary = {
 	"return_to_camp": "RETURN TO CAMP",
 
 	# Level Up
+	"level_up_title": "LEVEL UP!",
+	"level_up_choose": "Choose a skill:",
 	"combo_label": "%s [COMBO]\n%s",
 	"skill_label": "%s (Lv.%d)\n%s",
 	"bonus_label": "★ %s\n%s",
@@ -132,6 +134,8 @@ const _ZH: Dictionary = {
 	"return_to_camp": "返回营地",
 
 	# Level Up
+	"level_up_title": "升级!",
+	"level_up_choose": "选择一个技能:",
 	"combo_label": "%s [组合技]\n%s",
 	"skill_label": "%s (Lv.%d)\n%s",
 	"bonus_label": "★ %s\n%s",

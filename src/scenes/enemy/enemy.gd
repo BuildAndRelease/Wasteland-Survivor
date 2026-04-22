@@ -12,6 +12,15 @@ extends CharacterBody2D
 ## Enemy type metadata (set by spawner via configure()).
 var enemy_type: int = EnemyData.EnemyType.WALKER
 var behavior: String = "chase"
+var enemy_id: String = "walker"
+var facing_direction: String = "south"
+
+# Walk frame animation
+var _walk_frame_timer: float = 0.0
+const WALK_FRAME_INTERVAL: float = 0.1
+var _walk_sheets: Dictionary = {}  # direction -> Texture2D
+var _walk_hframes: Dictionary = {}  # direction -> int
+var _is_walk_playing: bool = false
 
 ## Ranged attack vars (used when behavior == "ranged").
 var attack_range: float = 250.0
@@ -77,13 +86,16 @@ func configure(type_data: Dictionary) -> void:
 	var esize: Vector2 = type_data.get("size", Vector2(20, 20))
 
 	# Load pixel art texture
-	var enemy_id: String = type_data.get("id", "walker")
+	enemy_id = type_data.get("id", "walker")
 	var tex_path: String = "res://assets/sprites/enemies/%s.png" % enemy_id
 	if ResourceLoader.exists(tex_path):
 		sprite.texture = load(tex_path)
 	var shape := RectangleShape2D.new()
 	shape.size = esize
 	col_shape.shape = shape
+
+	# Load walk spritesheets
+	_load_walk_sheets()
 
 	# Behavior-specific setup
 	if behavior == "ranged":
@@ -111,6 +123,7 @@ func _physics_process(delta: float) -> void:
 	if is_stunned:
 		velocity = knockback_velocity
 		move_and_slide()
+		_update_walk_animation()
 		return
 
 	if not is_instance_valid(player_ref):
@@ -128,6 +141,7 @@ func _physics_process(delta: float) -> void:
 func _behavior_chase(delta: float) -> void:
 	var dir := (player_ref.global_position - global_position).normalized()
 	velocity = dir * move_speed * speed_mult + knockback_velocity
+	_update_facing(dir)
 	move_and_slide()
 	_try_contact_damage()
 
@@ -146,6 +160,7 @@ func _behavior_ranged(delta: float) -> void:
 		# Strafe perpendicular
 		var strafe := dir.rotated(PI / 2.0)
 		velocity = strafe * move_speed * speed_mult * 0.4 + knockback_velocity
+	_update_facing(dir)
 	move_and_slide()
 
 	# Shoot
@@ -170,6 +185,7 @@ func _behavior_explode(delta: float) -> void:
 
 	var dir := (player_ref.global_position - global_position).normalized()
 	velocity = dir * move_speed * speed_mult + knockback_velocity
+	_update_facing(dir)
 	move_and_slide()
 
 	var dist := global_position.distance_to(player_ref.global_position)
@@ -203,7 +219,7 @@ func _explode() -> void:
 	gem.xp_value = xp_drop
 	get_tree().current_scene.add_child(gem)
 	_try_drop_items()
-	queue_free()
+	call_deferred("queue_free")
 
 func _fire_acid_projectile() -> void:
 	if not is_instance_valid(player_ref):
@@ -215,6 +231,68 @@ func _fire_acid_projectile() -> void:
 	proj.damage = projectile_damage
 	get_tree().current_scene.add_child(proj)
 
+func _update_facing(dir: Vector2) -> void:
+	if dir.length() < 0.01:
+		return
+	var new_dir: String
+	if absf(dir.x) > absf(dir.y):
+		new_dir = "east" if dir.x > 0.0 else "west"
+	else:
+		new_dir = "south" if dir.y > 0.0 else "north"
+	if new_dir != facing_direction:
+		facing_direction = new_dir
+		# Reset walk animation when direction changes
+		_walk_frame_timer = 0.0
+
+	# Update walk animation
+	_update_walk_animation()
+
+## Load walking spritesheet textures for each direction.
+func _load_walk_sheets() -> void:
+	for d in ["south", "east", "north", "west"]:
+		var tex_path := "res://assets/sprites/enemies/walk/%s_walk_%s.png" % [enemy_id, d]
+		if ResourceLoader.exists(tex_path):
+			var tex: Texture2D = load(tex_path)
+			_walk_sheets[d] = tex
+			var img_w: int = tex.get_width()
+			var img_h: int = tex.get_height()
+			_walk_hframes[d] = img_w / img_h if img_h > 0 else 1
+
+## Play walk spritesheet frames or show idle direction.
+func _update_walk_animation() -> void:
+	var sprite: Sprite2D = get_node_or_null("Sprite")
+	if not sprite:
+		return
+	var is_moving := velocity.length() > 5.0
+	var dt := get_physics_process_delta_time()
+	if is_moving and _walk_sheets.has(facing_direction):
+		var sheet: Texture2D = _walk_sheets[facing_direction]
+		var hf: int = _walk_hframes.get(facing_direction, 6)
+		if sprite.texture != sheet:
+			sprite.texture = sheet
+			sprite.hframes = hf
+			sprite.frame = 0
+			_walk_frame_timer = 0.0
+			_is_walk_playing = true
+		_walk_frame_timer += dt
+		if _walk_frame_timer >= WALK_FRAME_INTERVAL:
+			_walk_frame_timer -= WALK_FRAME_INTERVAL
+			sprite.frame = (sprite.frame + 1) % hf
+		sprite.offset.y = 0.0
+		sprite.rotation_degrees = 0.0
+		sprite.scale = Vector2.ONE
+	else:
+		if _is_walk_playing:
+			_is_walk_playing = false
+			var tex_path := "res://assets/sprites/enemies/directions/%s_%s.png" % [enemy_id, facing_direction]
+			if ResourceLoader.exists(tex_path):
+				sprite.texture = load(tex_path)
+				sprite.hframes = 1
+				sprite.frame = 0
+		sprite.offset.y = 0.0
+		sprite.rotation_degrees = 0.0
+		sprite.scale = Vector2.ONE
+
 func _try_contact_damage() -> void:
 	if damage_cooldown > 0.0:
 		return
@@ -225,7 +303,11 @@ func _try_contact_damage() -> void:
 			player_ref.take_damage(contact_damage, self)
 			damage_cooldown = 1.0
 
+var _is_dying := false
+
 func take_damage(amount: int) -> void:
+	if _is_dying:
+		return
 	current_hp -= amount
 	# Flash red briefly
 	modulate = Color(1, 0.3, 0.3, 1)
@@ -295,6 +377,9 @@ func _update_dot(delta: float) -> void:
 		i -= 1
 
 func _die() -> void:
+	if _is_dying:
+		return
+	_is_dying = true
 	GameManager.enemies_killed += 1
 	# Death VFX/SFX based on enemy type
 	var death_color := Color(1, 0.3, 0.2)
@@ -317,7 +402,7 @@ func _die() -> void:
 	gem.xp_value = xp_drop
 	get_tree().current_scene.add_child(gem)
 	_try_drop_items()
-	queue_free()
+	call_deferred("queue_free")
 
 ## Roll random drops and spawn them at enemy position.
 func _try_drop_items() -> void:

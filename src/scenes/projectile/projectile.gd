@@ -21,7 +21,7 @@ func _physics_process(delta: float) -> void:
 	position += direction * speed * delta
 	time_alive += delta
 	if time_alive >= lifetime:
-		queue_free()
+		call_deferred("queue_free")
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies") and body.has_method("take_damage"):
@@ -29,4 +29,4 @@ func _on_body_entered(body: Node2D) -> void:
 		# Berserker Blood: heal player on hit
 		if lifesteal_percent > 0.0 and is_instance_valid(lifesteal_target) and lifesteal_target.has_method("heal"):
 			lifesteal_target.heal(damage * lifesteal_percent)
-		queue_free()
+		call_deferred("queue_free")

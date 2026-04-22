@@ -40,6 +40,14 @@ var stun_timer: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 var knockback_decay: float = 400.0
 var dot_effects: Array = []
+var _facing_direction: String = "south"
+
+# Walk frame animation
+var _walk_frame_timer: float = 0.0
+const WALK_FRAME_INTERVAL: float = 0.12
+var _walk_sheets: Dictionary = {}
+var _walk_hframes: Dictionary = {}
+var _is_walk_playing: bool = false
 
 var xp_gem_scene: PackedScene
 var enemy_scene: PackedScene
@@ -68,6 +76,7 @@ func _ready() -> void:
 
 	# Build visual
 	_build_visual(data)
+	_load_walk_sheets()
 
 	health_changed.emit(current_hp, max_hp)
 
@@ -145,6 +154,7 @@ func _physics_process(delta: float) -> void:
 		# Chase player
 		var dir := (player_ref.global_position - global_position).normalized()
 		velocity = dir * move_speed * speed_mult + knockback_velocity
+		_update_facing(dir)
 		move_and_slide()
 
 	_try_contact_damage()
@@ -222,6 +232,62 @@ func _try_contact_damage() -> void:
 		if player_ref.has_method("take_damage"):
 			player_ref.take_damage(contact_damage, self)
 			damage_cooldown = 1.0
+
+func _update_facing(dir: Vector2) -> void:
+	if dir.length() < 0.01:
+		return
+	var new_dir: String
+	if absf(dir.x) > absf(dir.y):
+		new_dir = "east" if dir.x > 0.0 else "west"
+	else:
+		new_dir = "south" if dir.y > 0.0 else "north"
+	if new_dir != _facing_direction:
+		_facing_direction = new_dir
+		_walk_frame_timer = 0.0
+	_update_walk_animation()
+
+## Load walking spritesheets for each direction.
+func _load_walk_sheets() -> void:
+	for d in ["south", "east", "north", "west"]:
+		var tex_path := "res://assets/sprites/enemies/walk/boss_ash_behemoth_walk_%s.png" % d
+		if ResourceLoader.exists(tex_path):
+			var tex: Texture2D = load(tex_path)
+			_walk_sheets[d] = tex
+			var img_w: int = tex.get_width()
+			var img_h: int = tex.get_height()
+			_walk_hframes[d] = img_w / img_h if img_h > 0 else 1
+
+## Play walk spritesheet frames or show idle direction.
+func _update_walk_animation() -> void:
+	var sprite: Sprite2D = get_node_or_null("Sprite")
+	if not sprite:
+		return
+	var is_moving := velocity.length() > 5.0
+	var dt := get_physics_process_delta_time()
+	if is_moving and _walk_sheets.has(_facing_direction):
+		var sheet: Texture2D = _walk_sheets[_facing_direction]
+		var hf: int = _walk_hframes.get(_facing_direction, 6)
+		if sprite.texture != sheet:
+			sprite.texture = sheet
+			sprite.hframes = hf
+			sprite.frame = 0
+			_walk_frame_timer = 0.0
+			_is_walk_playing = true
+		_walk_frame_timer += dt
+		if _walk_frame_timer >= WALK_FRAME_INTERVAL:
+			_walk_frame_timer -= WALK_FRAME_INTERVAL
+			sprite.frame = (sprite.frame + 1) % hf
+		sprite.offset.y = 0.0
+		sprite.rotation_degrees = 0.0
+		sprite.scale = Vector2.ONE
+	else:
+		if _is_walk_playing:
+			_is_walk_playing = false
+			var tex_path := "res://assets/sprites/enemies/directions/boss_ash_behemoth_%s.png" % _facing_direction
+			if ResourceLoader.exists(tex_path):
+				sprite.texture = load(tex_path)
+				sprite.hframes = 1
+				sprite.frame = 0
 
 func take_damage(amount: int) -> void:
 	current_hp -= amount

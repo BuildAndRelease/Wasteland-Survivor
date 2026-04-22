@@ -21,6 +21,14 @@ var dodge_timer: float = 0.0
 var dodge_cooldown_timer: float = 0.0
 var is_dodging: bool = false
 var dodge_direction: Vector2 = Vector2.ZERO
+var facing_direction: String = "south"
+
+# Walk frame animation
+var _walk_frame_timer: float = 0.0
+const WALK_FRAME_INTERVAL: float = 0.1  # seconds per frame
+var _walk_sheets: Dictionary = {}  # direction -> Texture2D
+var _walk_hframes: Dictionary = {}  # direction -> int (frame count)
+var _is_walk_playing: bool = false
 
 # Skill modifiers (set by SkillManager)
 var xp_range_mult: float = 1.0
@@ -49,6 +57,7 @@ func _ready() -> void:
 	add_to_group("player")
 	projectile_scene = preload("res://src/scenes/projectile/projectile.tscn")
 	health_changed.emit(current_hp, max_hp)
+	_load_walk_sheets()
 
 func _physics_process(delta: float) -> void:
 	if not GameManager.is_game_active:
@@ -58,6 +67,8 @@ func _physics_process(delta: float) -> void:
 
 	_handle_dodge(delta)
 	_handle_movement(delta)
+	_update_facing_direction()
+	_update_sprite_animation(delta)
 	_handle_attack(delta)
 	_handle_rage(delta)
 	_collect_xp_gems()
@@ -77,6 +88,67 @@ func _handle_movement(delta: float) -> void:
 		input_dir = input_dir.normalized()
 
 	velocity = input_dir * move_speed
+
+func _update_facing_direction() -> void:
+	var dir := dodge_direction if is_dodging and dodge_direction.length() > 0.0 else velocity
+	if dir.length() < 0.1:
+		return
+	if absf(dir.x) > absf(dir.y):
+		facing_direction = "east" if dir.x > 0.0 else "west"
+	else:
+		facing_direction = "south" if dir.y > 0.0 else "north"
+
+## Load walking spritesheet textures for each direction.
+func _load_walk_sheets() -> void:
+	var char_id := SaveManager.selected_character
+	for d in ["south", "east", "north", "west"]:
+		var tex_path := "res://assets/sprites/player/walk/%s_walk_%s.png" % [char_id, d]
+		if ResourceLoader.exists(tex_path):
+			var tex: Texture2D = load(tex_path)
+			_walk_sheets[d] = tex
+			# Calculate frame count: sheet_width / sheet_height
+			var img_w: int = tex.get_width()
+			var img_h: int = tex.get_height()
+			_walk_hframes[d] = img_w / img_h if img_h > 0 else 1
+
+## Update sprite: play walk animation when moving, show static direction when idle.
+func _update_sprite_animation(delta: float) -> void:
+	var sprite: Sprite2D = $Sprite
+	if not sprite:
+		return
+	var is_moving := velocity.length() > 10.0
+	if is_moving and _walk_sheets.has(facing_direction):
+		# Switch to walk spritesheet for current direction
+		var sheet: Texture2D = _walk_sheets[facing_direction]
+		var hf: int = _walk_hframes.get(facing_direction, 6)
+		if sprite.texture != sheet:
+			sprite.texture = sheet
+			sprite.hframes = hf
+			sprite.frame = 0
+			_walk_frame_timer = 0.0
+			_is_walk_playing = true
+		# Advance frame
+		_walk_frame_timer += delta
+		if _walk_frame_timer >= WALK_FRAME_INTERVAL:
+			_walk_frame_timer -= WALK_FRAME_INTERVAL
+			sprite.frame = (sprite.frame + 1) % hf
+		# Reset any leftover transform from old walk_bob
+		sprite.offset.y = 0.0
+		sprite.rotation_degrees = 0.0
+		sprite.scale = Vector2.ONE
+	else:
+		# Idle: show static direction texture
+		if _is_walk_playing or not _walk_sheets.has(facing_direction):
+			_is_walk_playing = false
+			var char_id := SaveManager.selected_character
+			var tex_path := "res://assets/sprites/player/directions/%s_%s.png" % [char_id, facing_direction]
+			if ResourceLoader.exists(tex_path):
+				sprite.texture = load(tex_path)
+				sprite.hframes = 1
+				sprite.frame = 0
+		sprite.offset.y = 0.0
+		sprite.rotation_degrees = 0.0
+		sprite.scale = Vector2.ONE
 
 func _handle_dodge(delta: float) -> void:
 	dodge_cooldown_timer -= delta
