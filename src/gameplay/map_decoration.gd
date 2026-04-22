@@ -52,46 +52,49 @@ const MS_TO_TILE: Array = [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
 
 const DECORATIONS: Array = [
 	{
-		"texture": "dead_tree",
-		"min_scale": 0.4,
-		"max_scale": 0.7,
-		"weight": 0.2,
-	},
-	{
-		"texture": "metal_debris",
-		"min_scale": 0.4,
-		"max_scale": 0.8,
-		"weight": 0.15,
-	},
-	{
 		"color": Color(0.3, 0.28, 0.25, 0.8),
 		"min_size": Vector2(4, 4),
 		"max_size": Vector2(12, 8),
-		"weight": 0.35,
+		"weight": 0.5,
 	},
 	{
 		"color": Color(0.22, 0.2, 0.2, 0.4),
 		"min_size": Vector2(15, 10),
 		"max_size": Vector2(40, 30),
-		"weight": 0.3,
+		"weight": 0.5,
 	},
 ]
 
 const OBSTACLES: Array = [
 	{
+		"texture": "dead_tree",
+		"collision_size": Vector2(34, 38),
+		"sprite_scale": 1.3,
+		"weight": 0.18,
+	},
+	{
+		"texture": "metal_debris",
+		"collision_size": Vector2(42, 26),
+		"sprite_scale": 1.4,
+		"weight": 0.17,
+	},
+	{
 		"texture": "ruined_wall",
-		"collision_size": Vector2(60, 20),
-		"weight": 0.35,
+		"collision_size": Vector2(78, 28),
+		"sprite_scale": 1.25,
+		"weight": 0.24,
 	},
 	{
 		"texture": "wrecked_car",
-		"collision_size": Vector2(50, 30),
-		"weight": 0.3,
+		"collision_size": Vector2(68, 42),
+		"sprite_scale": 1.25,
+		"weight": 0.19,
 	},
 	{
 		"texture": "large_rock",
-		"collision_size": Vector2(35, 35),
-		"weight": 0.35,
+		"collision_size": Vector2(48, 48),
+		"sprite_scale": 1.25,
+		"weight": 0.22,
 	},
 ]
 
@@ -116,13 +119,13 @@ func _preload_textures() -> void:
 		else:
 			_tile_textures.append(null)
 
-	var deco_names := ["dead_tree", "metal_debris"]
+	var deco_names := []
 	for dname in deco_names:
 		var path := "res://assets/sprites/objects/%s.png" % dname
 		if ResourceLoader.exists(path):
 			_decoration_textures[dname] = load(path)
 
-	var obs_names := ["ruined_wall", "wrecked_car", "large_rock"]
+	var obs_names := ["dead_tree", "metal_debris", "ruined_wall", "wrecked_car", "large_rock"]
 	for oname in obs_names:
 		var path := "res://assets/sprites/objects/%s.png" % oname
 		if ResourceLoader.exists(path):
@@ -266,12 +269,16 @@ func _generate_chunk(chunk_key: Vector2i) -> void:
 
 		var body := StaticBody2D.new()
 		body.position = pos
+		body.collision_layer = 4
+		body.collision_mask = 0
 
 		var tex_name: String = obs_type.get("texture", "")
 		if _obstacle_textures.has(tex_name):
 			var sprite := Sprite2D.new()
 			sprite.texture = _obstacle_textures[tex_name]
 			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			var sprite_scale: float = obs_type.get("sprite_scale", 1.0)
+			sprite.scale = Vector2(sprite_scale, sprite_scale)
 			body.add_child(sprite)
 		else:
 			var visual := ColorRect.new()
