@@ -11,7 +11,7 @@ extends Node2D
 @onready var camera: Camera2D = $Camera2D
 @onready var map_decoration: Node2D = $MapDecoration
 
-@export var theme_id: String = "level2_frozen_wasteland"
+@export var theme_id: String = ""
 
 var skill_manager: SkillManager = null
 
@@ -24,7 +24,8 @@ var _fade_overlay: ColorRect = null
 
 
 func _ready() -> void:
-	GameManager.set_theme(theme_id)
+	var resolved_theme_id := GameManager.current_theme_id if GameManager.current_theme_id != "" else theme_id
+	GameManager.set_theme(resolved_theme_id)
 	if map_decoration.has_method("refresh_theme"):
 		map_decoration.refresh_theme()
 

@@ -45,6 +45,9 @@ const _EN: Dictionary = {
 	"locked": "[LOCKED: %d coins]",
 	"upgrade_btn": "Upgrade (%d)",
 	"upgrade_max": "MAX",
+	"level_select_title": "— TEST LEVEL SELECT —",
+	"level_default": "Level 1 · Wasteland",
+	"level_frozen_test": "Level 2 · Frozen Wasteland (Test)",
 
 	# HUD
 	"wave_format": "Wave %d/5",
@@ -112,6 +115,9 @@ const _ZH: Dictionary = {
 	"locked": "[未解锁: %d 币]",
 	"upgrade_btn": "升级 (%d)",
 	"upgrade_max": "已满级",
+	"level_select_title": "— 测试关卡入口 —",
+	"level_default": "第 1 关 · 废土",
+	"level_frozen_test": "第 2 关 · 冰封废土（测试）",
 
 	# HUD
 	"wave_format": "第 %d/5 波",

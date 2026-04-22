@@ -6,27 +6,44 @@ extends Control
 @onready var char_container: HBoxContainer = $Content/CharacterSection/CharContainer
 @onready var char_info_label: Label = $Content/CharacterSection/CharInfoLabel
 @onready var upgrade_container: VBoxContainer = $Content/UpgradeSection/UpgradeList
+@onready var level_title_label: Label = $Content/LevelSection/LevelTitle
+@onready var level_selector: OptionButton = $Content/LevelSection/LevelSelector
 @onready var start_button: Button = $Content/StartButton
 @onready var menu_button: Button = $TopBar/MenuButton
 
 var _char_buttons: Dictionary = {}
 var _upgrade_buttons: Dictionary = {}
 var _selected_character: String = "survivor"
+var _selected_theme_id: String = ""
+
+const LEVEL_OPTIONS: Array[Dictionary] = [
+	{"id": "", "label_key": "level_default"},
+	{"id": "level2_frozen_wasteland", "label_key": "level_frozen_test"},
+]
 
 
 func _ready() -> void:
 	GameManager.set_state(GameManager.State.CAMP)
 	_selected_character = SaveManager.selected_character
+	_selected_theme_id = SaveManager.selected_theme_id
 	_build_character_buttons()
 	_build_upgrade_buttons()
+	_build_level_selector()
 	_update_coins_display()
 	_update_character_selection()
 	_update_upgrade_display()
-	start_button.pressed.connect(_on_start_pressed)
-	menu_button.pressed.connect(_on_menu_pressed)
-	SaveManager.data_changed.connect(_on_data_changed)
+	_update_level_selector()
+	if not start_button.pressed.is_connected(_on_start_pressed):
+		start_button.pressed.connect(_on_start_pressed)
+	if not menu_button.pressed.is_connected(_on_menu_pressed):
+		menu_button.pressed.connect(_on_menu_pressed)
+	if not level_selector.item_selected.is_connected(_on_level_selected):
+		level_selector.item_selected.connect(_on_level_selected)
+	if not SaveManager.data_changed.is_connected(_on_data_changed):
+		SaveManager.data_changed.connect(_on_data_changed)
 	start_button.text = Locale.t("start_game")
 	menu_button.text = Locale.t("back_to_menu")
+	level_title_label.text = Locale.t("level_select_title")
 
 
 func _build_character_buttons() -> void:
@@ -76,6 +93,14 @@ func _build_character_buttons() -> void:
 		btn.pressed.connect(_on_character_pressed.bind(char_id))
 		char_container.add_child(btn)
 		_char_buttons[char_id] = btn
+
+
+func _build_level_selector() -> void:
+	level_selector.clear()
+	for option in LEVEL_OPTIONS:
+		level_selector.add_item(Locale.t(option["label_key"]))
+		var idx := level_selector.item_count - 1
+		level_selector.set_item_metadata(idx, option["id"])
 
 
 func _build_upgrade_buttons() -> void:
@@ -157,6 +182,14 @@ func _update_character_selection() -> void:
 	char_info_label.text = "%s — %s" % [char_name, char_desc]
 
 
+func _update_level_selector() -> void:
+	for i in range(level_selector.item_count):
+		var option: Dictionary = LEVEL_OPTIONS[i]
+		level_selector.set_item_text(i, Locale.t(option["label_key"]))
+		if str(level_selector.get_item_metadata(i)) == _selected_theme_id:
+			level_selector.select(i)
+
+
 func _update_upgrade_display() -> void:
 	for upgrade_id: String in _upgrade_buttons:
 		var data: Dictionary = CampData.get_upgrade(upgrade_id)
@@ -213,6 +246,13 @@ func _on_upgrade_pressed(upgrade_id: String) -> void:
 		_update_upgrade_display()
 
 
+func _on_level_selected(index: int) -> void:
+	AudioManager.play_sfx("ui_click")
+	_selected_theme_id = str(level_selector.get_item_metadata(index))
+	SaveManager.selected_theme_id = _selected_theme_id
+	SaveManager.save_data()
+
+
 func _on_start_pressed() -> void:
 	AudioManager.play_sfx("ui_click")
 	GameManager.start_game()
@@ -225,3 +265,5 @@ func _on_menu_pressed() -> void:
 
 func _on_data_changed() -> void:
 	_update_coins_display()
+	_selected_theme_id = SaveManager.selected_theme_id
+	_update_level_selector()

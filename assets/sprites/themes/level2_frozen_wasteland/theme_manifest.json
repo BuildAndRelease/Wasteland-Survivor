@@ -21,7 +21,7 @@
     "large_rock": "assets/generated/level2_frozen_wasteland/objects/ice_boulder.png"
   },
   "notes": [
-    "walk sheets currently use single-frame directional fallback copies",
-    "game code falls back to default sprites when themed assets are missing"
+    "game code falls back to default sprites when themed assets are missing",
+    "walk sheets regenerated as multi-frame procedural sheets derived from selected level2 direction sprites"
   ]
 }

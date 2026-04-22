@@ -102,6 +102,20 @@ theme_override_constants/separation = 4
 layout_mode = 2
 custom_minimum_size = Vector2(0, 8)
 
+[node name="LevelSection" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LevelTitle" type="Label" parent="Content/LevelSection"]
+layout_mode = 2
+text = "— TEST LEVEL SELECT —"
+horizontal_alignment = 1
+
+[node name="LevelSelector" type="OptionButton" parent="Content/LevelSection"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 42)
+size_flags_horizontal = 4
+
 [node name="StartButton" type="Button" parent="Content"]
 layout_mode = 2
 custom_minimum_size = Vector2(240, 50)

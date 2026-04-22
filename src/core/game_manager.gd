@@ -71,7 +71,8 @@ func set_state(new_state: State) -> void:
 	game_state_changed.emit(State.keys()[new_state])
 
 func start_game() -> void:
-	reset_stats()
+	current_theme_id = SaveManager.selected_theme_id.strip_edges()
+	reset_stats(false)
 	get_tree().change_scene_to_file("res://src/scenes/game/game_world.tscn")
 	# State set after scene loads via game_world.gd _ready
 
@@ -99,7 +100,7 @@ func get_themed_sprite_path(relative_path: String, fallback_path: String = "") -
 		return fallback_path
 	return "res://assets/sprites/%s" % relative_path
 
-func reset_stats() -> void:
+func reset_stats(reset_theme: bool = true) -> void:
 	player_level = 1
 	player_xp = 0
 	current_wave = 1
@@ -108,7 +109,8 @@ func reset_stats() -> void:
 	is_game_active = false
 	boss_defeated = false
 	run_coins = 0
-	current_theme_id = ""
+	if reset_theme:
+		current_theme_id = ""
 
 func trigger_game_over() -> void:
 	set_state(State.GAME_OVER)

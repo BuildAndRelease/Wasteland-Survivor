@@ -20,6 +20,9 @@ var unlocked_characters: Dictionary = {}
 ## Currently selected character id.
 var selected_character: String = "survivor"
 
+## Currently selected theme/level id for next run.
+var selected_theme_id: String = ""
+
 var _is_web: bool = false
 
 
@@ -96,6 +99,7 @@ func reset_all() -> void:
 	upgrade_levels.clear()
 	unlocked_characters.clear()
 	selected_character = "survivor"
+	selected_theme_id = ""
 	save_data()
 
 
@@ -107,6 +111,7 @@ func _save_native() -> void:
 	cfg.set_value(SAVE_SECTION, "upgrade_levels", upgrade_levels)
 	cfg.set_value(SAVE_SECTION, "unlocked_characters", unlocked_characters)
 	cfg.set_value(SAVE_SECTION, "selected_character", selected_character)
+	cfg.set_value(SAVE_SECTION, "selected_theme_id", selected_theme_id)
 	cfg.save(SAVE_PATH)
 
 
@@ -118,6 +123,7 @@ func _load_native() -> void:
 	upgrade_levels = cfg.get_value(SAVE_SECTION, "upgrade_levels", {})
 	unlocked_characters = cfg.get_value(SAVE_SECTION, "unlocked_characters", {})
 	selected_character = cfg.get_value(SAVE_SECTION, "selected_character", "survivor")
+	selected_theme_id = cfg.get_value(SAVE_SECTION, "selected_theme_id", "")
 
 
 # --- Web save (JavaScriptBridge + localStorage) ---
@@ -128,6 +134,7 @@ func _save_web() -> void:
 		"upgrade_levels": upgrade_levels,
 		"unlocked_characters": unlocked_characters,
 		"selected_character": selected_character,
+		"selected_theme_id": selected_theme_id,
 	}
 	var json_str: String = JSON.stringify(data)
 	JavaScriptBridge.eval("localStorage.setItem('wasteland_survivor_save', '%s')" % json_str.c_escape())
@@ -152,3 +159,4 @@ func _load_web() -> void:
 	for key in raw_chars:
 		unlocked_characters[str(key)] = bool(raw_chars[key])
 	selected_character = str(data.get("selected_character", "survivor"))
+	selected_theme_id = str(data.get("selected_theme_id", ""))
