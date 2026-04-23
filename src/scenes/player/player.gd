@@ -46,6 +46,9 @@ var rage_cc_immune: bool = false
 var berserker_attack_bonus: float = 0.0
 var berserker_lifesteal: float = 0.0
 
+# Damage-over-time effects: { damage_per_tick, tick_interval, remaining_time, tick_timer }
+var dot_effects: Array = []
+
 # Heal accumulator for sub-integer regen
 var _heal_accumulator: float = 0.0
 
@@ -71,6 +74,7 @@ func _physics_process(delta: float) -> void:
 	_update_sprite_animation(delta)
 	_handle_attack(delta)
 	_handle_rage(delta)
+	_update_dot(delta)
 	_collect_xp_gems()
 	_collect_drops()
 	move_and_slide()
@@ -270,6 +274,29 @@ func heal(amount: float) -> void:
 		_heal_accumulator -= heal_int
 		current_hp = mini(current_hp + heal_int, max_hp)
 		health_changed.emit(current_hp, max_hp)
+
+## Apply a temporary damage-over-time effect to the player.
+func apply_dot(damage_per_tick: int, tick_interval: float, total_duration: float) -> void:
+	dot_effects.append({
+		"damage_per_tick": damage_per_tick,
+		"tick_interval": tick_interval,
+		"remaining_time": total_duration,
+		"tick_timer": tick_interval,
+	})
+
+func _update_dot(delta: float) -> void:
+	var i: int = dot_effects.size() - 1
+	while i >= 0:
+		var dot: Dictionary = dot_effects[i]
+		dot.remaining_time -= delta
+		dot.tick_timer -= delta
+		if dot.tick_timer <= 0.0:
+			dot.tick_timer += dot.tick_interval
+			take_damage(dot.damage_per_tick, null)
+			VfxManager.spawn_acid_splash(global_position, Color(1.0, 0.45, 0.1, 0.9))
+		if dot.remaining_time <= 0.0:
+			dot_effects.remove_at(i)
+		i -= 1
 
 ## Apply rage buff from Rage Injection skill.
 func apply_rage(attack_mult: float, duration: float, cc_immune: bool) -> void:

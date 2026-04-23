@@ -21,6 +21,8 @@ var _shake_timer: float = 0.0
 
 # Screen transition overlay
 var _fade_overlay: ColorRect = null
+var _molten_hazard_layer: Node2D = null
+var _molten_ground_script: GDScript = preload("res://src/scenes/game/molten_ground.gd")
 
 
 func _ready() -> void:
@@ -28,6 +30,7 @@ func _ready() -> void:
 	GameManager.set_theme(resolved_theme_id)
 	if map_decoration.has_method("refresh_theme"):
 		map_decoration.refresh_theme()
+	_ensure_molten_hazard_layer()
 
 	# Build fade overlay for screen transitions
 	_build_fade_overlay()
@@ -113,6 +116,26 @@ func screen_shake(intensity: float, duration: float) -> void:
 	if intensity > _shake_intensity:
 		_shake_intensity = intensity
 		_shake_timer = duration
+
+func _ensure_molten_hazard_layer() -> void:
+	if _molten_hazard_layer and is_instance_valid(_molten_hazard_layer):
+		return
+	_molten_hazard_layer = Node2D.new()
+	_molten_hazard_layer.name = "MoltenHazards"
+	_molten_hazard_layer.z_index = -2
+	add_child(_molten_hazard_layer)
+
+func spawn_molten_ground(pos: Vector2, radius: float = 90.0, duration: float = 4.0, damage_per_tick: int = 6, affects_enemies: bool = false) -> void:
+	if not GameManager.is_theme_active(GameManager.THEME_HELL_FURNACE):
+		return
+	_ensure_molten_hazard_layer()
+
+	var hazard := Area2D.new()
+	hazard.set_script(_molten_ground_script)
+	hazard.global_position = pos
+	hazard.configure(radius, duration, damage_per_tick, affects_enemies)
+	_molten_hazard_layer.add_child(hazard)
+	VfxManager.spawn_molten_burst(pos, radius * 0.55)
 
 
 func _apply_character_stats() -> void:

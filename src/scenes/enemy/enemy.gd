@@ -140,6 +140,8 @@ func _physics_process(delta: float) -> void:
 		"explode":
 			_behavior_explode(delta)
 
+	_update_walk_animation()
+
 ## Standard chase: run straight at the player.
 func _behavior_chase(delta: float) -> void:
 	var dir := (player_ref.global_position - global_position).normalized()
@@ -214,6 +216,8 @@ func _explode() -> void:
 	var game_world := get_tree().current_scene
 	if game_world and game_world.has_method("screen_shake"):
 		game_world.screen_shake(BalanceConfig.SHAKE_EXPLOSION_INTENSITY, BalanceConfig.SHAKE_EXPLOSION_DURATION)
+		if GameManager.is_theme_active(GameManager.THEME_HELL_FURNACE) and game_world.has_method("spawn_molten_ground"):
+			game_world.spawn_molten_ground(global_position, explode_range * 0.9, 4.0, 6, false)
 
 	# Die without normal XP drop — exploder gives XP through the explosion itself
 	GameManager.enemies_killed += 1
@@ -232,6 +236,11 @@ func _fire_acid_projectile() -> void:
 	proj.direction = (player_ref.global_position - global_position).normalized()
 	proj.speed = projectile_speed
 	proj.damage = projectile_damage
+	if GameManager.is_theme_active(GameManager.THEME_HELL_FURNACE):
+		proj.burn_damage_per_tick = maxi(1, int(round(projectile_damage * 0.25)))
+		proj.burn_tick_interval = 0.4
+		proj.burn_duration = 1.6
+		proj.projectile_color = Color(1.0, 0.45, 0.1, 0.95)
 	get_tree().current_scene.add_child(proj)
 
 func _update_facing(dir: Vector2) -> void:

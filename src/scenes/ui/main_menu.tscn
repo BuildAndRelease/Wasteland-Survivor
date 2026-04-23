@@ -52,6 +52,12 @@ custom_minimum_size = Vector2(200, 50)
 size_flags_horizontal = 4
 text = "PLAY"
 
+[node name="PreviewButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 50)
+size_flags_horizontal = 4
+text = "ASSET PREVIEW"
+
 [node name="LangButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 40)
@@ -59,4 +65,5 @@ size_flags_horizontal = 4
 text = "中文"
 
 [connection signal="pressed" from="VBoxContainer/StartButton" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="VBoxContainer/PreviewButton" to="." method="_on_preview_pressed"]
 [connection signal="pressed" from="VBoxContainer/LangButton" to="." method="_on_lang_pressed"]

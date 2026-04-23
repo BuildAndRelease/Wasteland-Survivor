@@ -20,6 +20,10 @@ var is_game_active: bool = false
 var run_coins: int = 0
 var current_theme_id: String = ""
 
+const THEME_DEFAULT: String = ""
+const THEME_FROZEN_WASTELAND: String = "level2_frozen_wasteland"
+const THEME_HELL_FURNACE: String = "level3_hell_furnace"
+
 ## Whether boss was defeated this run (used by settlement screen).
 var boss_defeated: bool = false
 
@@ -88,8 +92,29 @@ func go_to_menu() -> void:
 	get_tree().change_scene_to_file("res://src/scenes/ui/main_menu.tscn")
 	set_state(State.MAIN_MENU)
 
+func go_to_resource_preview() -> void:
+	reset_stats(false)
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://src/scenes/ui/resource_preview.tscn")
+	set_state(State.MAIN_MENU)
+
 func set_theme(theme_id: String) -> void:
 	current_theme_id = theme_id.strip_edges()
+
+func is_theme_active(theme_id: String) -> bool:
+	return current_theme_id.strip_edges() == theme_id.strip_edges()
+
+func get_boss_locale_key() -> String:
+	match current_theme_id:
+		THEME_FROZEN_WASTELAND:
+			return "boss_name_frozen"
+		THEME_HELL_FURNACE:
+			return "boss_name_hell"
+		_:
+			return "boss_name"
+
+func get_boss_display_name() -> String:
+	return Locale.t(get_boss_locale_key())
 
 func get_themed_sprite_path(relative_path: String, fallback_path: String = "") -> String:
 	if current_theme_id != "":

@@ -1,0 +1,29 @@
+{
+  "theme_id": "level3_hell_furnace",
+  "enemy_mapping": {
+    "walker": "assets/generated/level3_hell_furnace/enemies/cinder_thrall",
+    "mutant_dog": "assets/generated/level3_hell_furnace/enemies/furnace_hound",
+    "acid_bug": "assets/generated/level3_hell_furnace/enemies/slag_spitter",
+    "iron_giant": "assets/generated/level3_hell_furnace/enemies/iron_warden",
+    "exploder": "assets/generated/level3_hell_furnace/enemies/ember_bomber",
+    "boss_ash_behemoth": "assets/generated/level3_hell_furnace/enemies/inferno_titan"
+  },
+  "selected_redraw_targets": {
+    "slag_spitter": "assets/generated/level3_hell_furnace/enemies/slag_spitter",
+    "ember_bomber": "assets/generated/level3_hell_furnace/enemies/ember_bomber",
+    "inferno_titan": "assets/generated/level3_hell_furnace/enemies/inferno_titan"
+  },
+  "object_mapping": {
+    "dead_tree": "assets/generated/level3_hell_furnace/objects/charred_spike_tree.png",
+    "metal_debris": "assets/generated/level3_hell_furnace/objects/slag_metal_debris.png",
+    "ruined_wall": "assets/generated/level3_hell_furnace/objects/forge_ruined_wall.png",
+    "wrecked_car": "assets/generated/level3_hell_furnace/objects/burned_wrecked_car.png",
+    "large_rock": "assets/generated/level3_hell_furnace/objects/obsidian_slag_boulder.png"
+  },
+  "notes": [
+    "skeleton manifest for level3 hell furnace theme",
+    "update selected_redraw_targets to redraw_candidates paths after review if stronger variants are chosen",
+    "game code falls back to default sprites when themed assets are missing",
+    "walk sheets may need regeneration from selected direction sprites, same as level2 flow"
+  ]
+}

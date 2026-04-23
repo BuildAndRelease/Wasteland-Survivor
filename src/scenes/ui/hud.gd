@@ -207,7 +207,7 @@ func _build_boss_hp_bar() -> void:
 
 	_boss_name_label = Label.new()
 	_boss_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boss_name_label.text = Locale.t("boss_name")
+	_boss_name_label.text = GameManager.get_boss_display_name()
 	_boss_name_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.1, 1.0))
 	_boss_name_label.add_theme_font_size_override("font_size", 18)
 	_boss_hp_container.add_child(_boss_name_label)
@@ -225,6 +225,8 @@ func _build_boss_hp_bar() -> void:
 func set_boss(boss: Node2D) -> void:
 	_boss_ref = boss
 	_boss_hp_container.visible = true
+	if _boss_name_label:
+		_boss_name_label.text = GameManager.get_boss_display_name()
 	if boss.has_signal("health_changed"):
 		boss.health_changed.connect(_on_boss_health_changed)
 	if boss.has_signal("boss_died"):

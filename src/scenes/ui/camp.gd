@@ -19,6 +19,7 @@ var _selected_theme_id: String = ""
 const LEVEL_OPTIONS: Array[Dictionary] = [
 	{"id": "", "label_key": "level_default"},
 	{"id": "level2_frozen_wasteland", "label_key": "level_frozen_test"},
+	{"id": "level3_hell_furnace", "label_key": "level_hell_test"},
 ]
 
 

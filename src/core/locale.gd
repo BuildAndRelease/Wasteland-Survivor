@@ -36,6 +36,7 @@ const _EN: Dictionary = {
 	"title": "WASTELAND SURVIVOR",
 	"subtitle": "Survive the wasteland. Collect scrap. Get stronger.",
 	"play": "PLAY",
+	"asset_preview": "ASSET PREVIEW",
 	"language": "中文",
 
 	# Camp
@@ -48,6 +49,7 @@ const _EN: Dictionary = {
 	"level_select_title": "— TEST LEVEL SELECT —",
 	"level_default": "Level 1 · Wasteland",
 	"level_frozen_test": "Level 2 · Frozen Wasteland (Test)",
+	"level_hell_test": "Level 3 · Hell Furnace (Test)",
 
 	# HUD
 	"wave_format": "Wave %d/5",
@@ -58,6 +60,8 @@ const _EN: Dictionary = {
 	"final_wave": "FINAL WAVE — BOSS INCOMING!",
 	"boss_defeated": "BOSS DEFEATED!",
 	"boss_name": "Ash Behemoth",
+	"boss_name_frozen": "Blizzard Behemoth",
+	"boss_name_hell": "Inferno Titan",
 
 	# Settlement
 	"victory": "VICTORY!",
@@ -106,6 +110,7 @@ const _ZH: Dictionary = {
 	"title": "废土幸存者",
 	"subtitle": "在废土中求生，收集废铁，变得更强。",
 	"play": "开始游戏",
+	"asset_preview": "资源预览",
 	"language": "EN",
 
 	# Camp
@@ -118,6 +123,7 @@ const _ZH: Dictionary = {
 	"level_select_title": "— 测试关卡入口 —",
 	"level_default": "第 1 关 · 废土",
 	"level_frozen_test": "第 2 关 · 冰封废土（测试）",
+	"level_hell_test": "第 3 关 · 地狱熔炉（测试）",
 
 	# HUD
 	"wave_format": "第 %d/5 波",
@@ -128,6 +134,8 @@ const _ZH: Dictionary = {
 	"final_wave": "最终波 — BOSS来袭！",
 	"boss_defeated": "BOSS已击败！",
 	"boss_name": "灰烬巨兽",
+	"boss_name_frozen": "暴雪巨兽",
+	"boss_name_hell": "熔炉泰坦",
 
 	# Settlement
 	"victory": "胜利！",

@@ -123,6 +123,7 @@ func _physics_process(delta: float) -> void:
 	if is_stunned:
 		velocity = knockback_velocity
 		move_and_slide()
+		_update_walk_animation()
 		return
 
 	if not is_instance_valid(player_ref):
@@ -131,6 +132,7 @@ func _physics_process(delta: float) -> void:
 	# Handle active charge
 	if _is_charging:
 		_process_charge(delta)
+		_update_walk_animation()
 		return
 
 	# Update attack timers
@@ -160,6 +162,7 @@ func _physics_process(delta: float) -> void:
 		_update_facing(dir)
 		move_and_slide()
 
+	_update_walk_animation()
 	_try_contact_damage()
 
 ## Attack pattern 1: Ground Slam — AoE damage around boss.
@@ -171,6 +174,8 @@ func _ground_slam() -> void:
 	var game_world := get_tree().current_scene
 	if game_world and game_world.has_method("screen_shake"):
 		game_world.screen_shake(BalanceConfig.SHAKE_BOSS_SLAM_INTENSITY, BalanceConfig.SHAKE_BOSS_SLAM_DURATION)
+		if GameManager.is_theme_active(GameManager.THEME_HELL_FURNACE) and game_world.has_method("spawn_molten_ground"):
+			game_world.spawn_molten_ground(global_position, slam_radius * 0.9, 5.5, 8, false)
 
 	# Damage player if in range
 	if is_instance_valid(player_ref):

@@ -141,8 +141,13 @@ func spawn_trail(pos: Vector2, color: Color = Color(1, 0.5, 0.0)) -> void:
 
 
 ## Acid splash on hit.
-func spawn_acid_splash(pos: Vector2) -> void:
-	spawn_death_burst(pos, Color(0.3, 0.9, 0.1), 8)
+func spawn_acid_splash(pos: Vector2, color: Color = Color(0.3, 0.9, 0.1, 1.0)) -> void:
+	spawn_death_burst(pos, color, 8)
+
+
+## Molten cinder burst for hell-furnace hazards.
+func spawn_molten_burst(pos: Vector2, radius: float = 50.0) -> void:
+	spawn_explosion(pos, radius, Color(1.0, 0.45, 0.1, 0.9))
 
 
 ## Floating damage number.
